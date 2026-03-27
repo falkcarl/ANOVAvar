@@ -9,10 +9,9 @@ format:
     toc-location: left
 filters:
   - details
-  #- diagram
-#  - shinylive
+  - shinylive
 editor: source
-server: shiny
+#server: shiny
 engine: knitr
 ---
 
@@ -21,7 +20,8 @@ engine: knitr
 <!-- quarto add r-wasm/quarto-live -->
 
 ```{r setup}
-knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+#| echo: false
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=FALSE)
 ```
 
 # Overview
@@ -135,41 +135,6 @@ knitr::kable(dataset2, align='c')
 :::::
 
 :::
-
-
-```{r}
-#| panel: fill
-#| eval: false
-plotOutput("plotscale")
-sliderInput("scalesd", "Standard deviation:",min=1,max=5,value=2.5,step=.5)
-```
-
-```{r}
-#| context: server
-#| eval: false
-
-set.seed(5234)
-dattoscale <- rnorm(25, 0, 5)
-
-output$plotscale <- renderPlot({
-  
-  tmpz <- scale(dattoscale)
-  tmpc <- input$scalesd*tmpz
-  tmpc <- data.frame(x = tmpc)
-  plotscale <- ggplot(data=tmpc, aes(x=x)) +
-                  geom_dotplot() +
-  scale_y_continuous(name = "", breaks = NULL) +
-  annotate("text",x=Inf,y=Inf,label=paste0("Mean = ",round(mean(tmpc$x))), vjust = 1, hjust = 1) +
-  annotate("text",x=Inf,y=Inf,label=paste0("SD = ",sd(tmpc$x)), vjust = 2, hjust = 1) +
-  #annotate("text",x=Inf,y=Inf,label=paste0("Range = ",max(dataset1$x)-min(dataset1$x)), vjust = 3, hjust = 1) +
-  xlab("x") + 
-  theme_classic(base_size = 20) +
-  xlim(-20, 20)
-  
-  return(plotscale)
-})
-
-```
 
 ## Variability, sum of squared deviations
 
@@ -351,76 +316,77 @@ One example: linear regression works by minimizing squared deviations. If we ins
 
 The sum of squared deviations is usually not the preferred choice for quantifying variability. To see why, consider what happens to it as sample size changes:
 
-<!--
-- Sample plot
-- Compute sum of squares (value box? or on plot)
-- Sample size slider, with animation
--->
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 500
 
-```{r}
-#| panel: fill
-plotOutput("plotss")
-sliderInput("SampleSize", "Sample size:",min=5,max=25,value=5,step=1)
-```
+######################################################################
+## Interactive Statistics Project - Module 4: Variability in ANOVA
+##
+## We thank the Association for Psychological Science for a small
+## teaching grant to help in the development of this software.
+##
+## Copyright 2025-2026 Jeremy Rappel, Carl F. Falk, Mira Saad &
+##  Jens Kreitewolf
+##
+## This program is free software: you can redistribute it and/or
+## modify it under the terms of the GNU Affero General Public License as
+## published by the Free Software Foundation, either version 3 of
+## the License, or (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU Affero General Public License for more details.
+## <http://www.gnu.org/licenses/>
+##
 
-```{r}
-#| context: server
-#library(plotly)
-output$plotss <- renderPlot({
+library(tibble) # CFF: this one also apparently required for shinylive to work
+library(dplyr)
+library(shiny)
+library(munsell) # was included due to bug in getting ggplot2 to work with shinylive; still required for some reason
+#library(bslib) # For bootstrap UIs
+#library(bsicons) # for tooltip icons
+library(ggplot2)
 
-  set.seed(7234)
-  dat <- rnorm(25, 0, 5)
-  datdf <- data.frame(x = dat[1:5],
-                    SampleSize = rep(5, 5),
-                    SS = rep(sum((dat[1:5]-mean(dat[1:5]))^2), 5)
-  )
-  for(s in 6:25){
-    datdf <- rbind(datdf, data.frame(x=dat[1:s],
-                                   SampleSize = rep(s, s),
-                                   SS = rep(sum((dat[1:s]-mean(dat[1:s]))^2), s)
-                                   )
-                     )
-  }
+ui <- fluidPage(
+  plotOutput("plotss"),
+  sliderInput("SampleSize", "Sample size:",min=5,max=25,value=5,step=1)
+)
+
+server <- function(input, output) { 
   
-  tmpdf <- datdf %>% filter(SampleSize == input$SampleSize)
-  SS <- tmpdf$SS[1]
-  plotss <- tmpdf %>%
-    ggplot(aes(x=x)) + 
-    geom_histogram(binwidth=1) +
-    ylim(0, 6) +
-    theme_classic(base_size = 20) +
-    annotate("text", x=0, y=4, label=paste0("Sum of Squares:", round(SS,2))) + 
-    annotate("text", x=0, y=5, label=paste0("Sample Size:", input$SampleSize)) +
-    xlim(-12,12)
-  # plotly version  
-  #for(s in 6:25){
-  #  datdf <- rbind(datdf, data.frame(x=dat[1:s],
-  #                               SampleSize = rep(s, s),
-  #                               SS = rep(sum((dat[1:s]-mean(dat[1:s]))^2), s)
-  #                               )
-  #                 )
-  #}
-  # plotss <- datdf %>% plot_ly(
-  #   x = ~x, 
-  #   type = "histogram",
-  #   autobinx = FALSE,
-  #   showlegend = FALSE,
-  #   xbins = list(start = -15, end = 15, size = 1),
-  #   marker = list(color = "steelblue", line = list(color = "white", width = 1))
-  # ) %>%
-  # add_text(x = 0, y = 5,
-  #   text = ~paste("SS:", SS),
-  #   showlegend = FALSE) %>%
-  # layout(
-  #   title = "Sum of squares across sample size",
-  #   xaxis = list(title = "x", range = c(-12, 12)),
-  #   yaxis = list(title = "Count", range = c(0, 6))
-  # )
-  # return(plotss)
+  output$plotss <- renderPlot({
   
-  return(plotss)
-})
+    set.seed(7234)
+    dat <- rnorm(25, 0, 5)
+    datdf <- data.frame(x = dat[1:5],
+                      SampleSize = rep(5, 5),
+                      SS = rep(sum((dat[1:5]-mean(dat[1:5]))^2), 5)
+    )
+    for(s in 6:25){
+      datdf <- rbind(datdf, data.frame(x=dat[1:s],
+                                     SampleSize = rep(s, s),
+                                     SS = rep(sum((dat[1:s]-mean(dat[1:s]))^2), s)
+                                     )
+                       )
+    }
+    
+    tmpdf <- datdf %>% dplyr::filter(SampleSize == input$SampleSize)
+    SS <- tmpdf$SS[1]
+    plotss <- tmpdf %>%
+      ggplot(aes(x=x)) + 
+      geom_histogram(binwidth=1) +
+      ylim(0, 6) +
+      theme_classic(base_size = 20) +
+      annotate("text", x=0, y=4, label=paste0("Sum of Squares:", round(SS,2)), size=9) + 
+      annotate("text", x=0, y=5, label=paste0("Sample Size:", input$SampleSize), size=9) +
+      xlim(-12,12)
+    return(plotss)
+  })
+}
 
+shinyApp(ui = ui, server = server)
 
 ```
 
@@ -571,56 +537,6 @@ We do not need all three means to be different than each other under the alterna
 ::: {.details summary="Click here to see the answer"}
 $H_0: \mu_1 = \mu_2 = \mu_3 = \mu_4 = \mu_5$
 :::
-
-
-<!--
-## Variability
-
-Consider the following two datasets, each of which contains two groups.
-
-```{r}
-dataset3 <- data.frame(Group1 = c(3,7,3,7,3,7),Group2=c(7,3,7,3,7,3))
-dataset4 <- data.frame(Group1 = c(3,3,3,3,3,3),Group2=c(7,7,7,7,7,7))
-```
-
-::::: {layout="[0.5, 0.5]"}
-::: {.column width="100%"}
-```{r}
-dataset3
-paste0("Sum of Squares = 48")
-```
-:::
-
-::: {.column width="100%"}
-```{r}
-dataset4
-paste0("Sum of Squares = 48")
-```
-:::
-:::::
-
-The total variability (Sum of Squares) in these datasets are the same, yet they tell very different stories.
--->
-
-<!--
-Both of these datasets have the same *grand mean*, or the average score if we ignore grouping.
-
-::::: {layout="[0.5, 0.5]"}
-::: {.column width="100%"}
-```{r}
-dataset3
-paste0("Grand Mean = (3 + 7 + 3 + .. + 3)/12 = 5")
-```
-:::
-
-::: {.column width="100%"}
-```{r}
-dataset4
-paste0("Grand Mean = (3 + 3 + 3 + .. + 7)/12 = 5")
-```
-:::
-:::::
--->
 
 ## Group means
 
@@ -847,74 +763,87 @@ ggplot(dat, aes(x = factor(group), y = value, color = factor(group))) +
 
 What happens to the scores if the between-group variability were to be decreased or increased? Try the slider for the following plot to find out.
 
-```{r}
-plotOutput("ssbplot")
-sliderInput("ssbscale", "Sum of squares between:",min=0,max=75,value=12.4,step=.2)
-```
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 500
 
-```{r}
-#| context: server
-library(tidyverse)
-output$ssbplot <- renderPlot({
-  
-  # set up dataset as before
-  datasets <- data.frame(
-    Control = c(4, 3, 5, 4, 5),
-    Mindfulness = c(4, 5, 6, 4, 6),
-    Walk = c(8, 7, 6, 5, 6)
-  )
+library(tibble) # CFF: this one also apparently required for shinylive to work
+library(dplyr)
+library(tidyr)
+library(shiny)
+library(munsell) # was included due to bug in getting ggplot2 to work with shinylive; still required for some reason
+#library(bslib) # For bootstrap UIs
+#library(bsicons) # for tooltip icons
+library(ggplot2)
 
-  datasets_long <- datasets %>% pivot_longer(cols=c("Control","Mindfulness","Walk"), names_to="group")
-  
-  dat <- datasets_long
-  
-  grand_mean <- mean(dat$value)
-  group_means <- colMeans(datasets)
-  dat <- dat %>% group_by(group) %>% mutate(GroupMean = mean(value)) %>% ungroup()
-  # for within-group deviations
-  dat<- dat %>% mutate(start_val = recode(GroupMean, `4.2` = 0.5, `5` = 1.5, `6.4` = 2.5),
-                 end_val = recode(GroupMean, `4.2` = 1.5, `5` = 2.5, `6.4` = 3.5))
-  # for between-group deviations
-  dat<- dat %>% mutate(bwx = recode(GroupMean, `4.2` = 1, `5` = 2, `6.4` = 3))
-  
-  # jitter so that points don't overlap
-  pos <- position_jitter(width = 0.25, height = 0, seed = 123)
-  
-  # now, rescale due to slider
-  new_sdg <- sqrt((input$ssbscale/2) / 5) # 5 is sample size per group; 2 is df
-  new_group_means <- new_sdg*scale(group_means) + grand_mean
-  mean_diff <- group_means - new_group_means
-  dat <- merge(dat, data.frame(group = c("Control","Mindfulness","Walk"),
-             new_group_mean = new_group_means))
-  dat <- dat %>% mutate(mean_diff = GroupMean - new_group_mean,
-                        newvalue = value - (GroupMean - new_group_mean))
-  dat$value <- dat$newvalue
-  dat$GroupMean <- dat$new_group_mean
+ui <- fluidPage(
+  plotOutput("ssbplot"),
+  sliderInput("ssbscale", "Sum of squares between:",min=0,max=75,value=12.4,step=.2)
+)
 
-  ssbplot <- ggplot(dat, aes(x = factor(group), y = value, color = factor(group))) +
+server <- function(input, output) {
+  output$ssbplot <- renderPlot({
   
-    # points
-    geom_point(position = pos, size = 3) +
+    # set up dataset as before
+    datasets <- data.frame(
+      Control = c(4, 3, 5, 4, 5),
+      Mindfulness = c(4, 5, 6, 4, 6),
+      Walk = c(8, 7, 6, 5, 6)
+    )
   
-    # grand mean
-    geom_hline(yintercept = grand_mean, color = "red", linewidth = 1) +
-
-    # group means
-    geom_segment(aes(x=start_val, xend = end_val, y=GroupMean, yend=GroupMean))+
-
-    # deviations
-    geom_segment(aes(xend = factor(group), y = GroupMean, yend = grand_mean), 
-                 linetype = "dotted", 
-                 linewidth = 1) +
+    datasets_long <- datasets %>% pivot_longer(cols=c("Control","Mindfulness","Walk"), names_to="group")
     
-    scale_color_brewer(palette = "Dark2", name = "Group") +
-    labs(y = "Well-being", x = "Group", title = "Sum of squares between (SSB)") +
-    theme_minimal(base_size = 15) + 
-    ylim(1,10)
+    dat <- datasets_long
+    
+    grand_mean <- mean(dat$value)
+    group_means <- colMeans(datasets)
+    dat <- dat %>% group_by(group) %>% mutate(GroupMean = mean(value)) %>% ungroup()
+    # for within-group deviations
+    dat<- dat %>% mutate(start_val = recode(GroupMean, `4.2` = 0.5, `5` = 1.5, `6.4` = 2.5),
+                   end_val = recode(GroupMean, `4.2` = 1.5, `5` = 2.5, `6.4` = 3.5))
+    # for between-group deviations
+    dat<- dat %>% mutate(bwx = recode(GroupMean, `4.2` = 1, `5` = 2, `6.4` = 3))
+    
+    # jitter so that points don't overlap
+    pos <- position_jitter(width = 0.25, height = 0, seed = 123)
+    
+    # now, rescale due to slider
+    new_sdg <- sqrt((input$ssbscale/2) / 5) # 5 is sample size per group; 2 is df
+    new_group_means <- new_sdg*scale(group_means) + grand_mean
+    mean_diff <- group_means - new_group_means
+    dat <- merge(dat, data.frame(group = c("Control","Mindfulness","Walk"),
+               new_group_mean = new_group_means))
+    dat <- dat %>% mutate(mean_diff = GroupMean - new_group_mean,
+                          newvalue = value - (GroupMean - new_group_mean))
+    dat$value <- dat$newvalue
+    dat$GroupMean <- dat$new_group_mean
   
-  return(ssbplot)
-})
+    ssbplot <- ggplot(dat, aes(x = factor(group), y = value, color = factor(group))) +
+    
+      # points
+      geom_point(position = pos, size = 3) +
+    
+      # grand mean
+      geom_hline(yintercept = grand_mean, color = "red", linewidth = 1) +
+  
+      # group means
+      geom_segment(aes(x=start_val, xend = end_val, y=GroupMean, yend=GroupMean))+
+  
+      # deviations
+      geom_segment(aes(xend = factor(group), y = GroupMean, yend = grand_mean), 
+                   linetype = "dotted", 
+                   linewidth = 1) +
+      
+      scale_color_brewer(palette = "Dark2", name = "Group") +
+      labs(y = "Well-being", x = "Group", title = "Sum of squares between (SSB)") +
+      theme_minimal(base_size = 15) + 
+      ylim(1,10)
+    
+    return(ssbplot)
+  })
+}
 
+shinyApp(ui = ui, server = server)
 ```
 
 - [As $SS_B$ increases, what happens to deviations between the group means and the grand mean?]{style="color: blue;"}
@@ -982,87 +911,101 @@ ggplot(dat, aes(x = factor(group), y = value, color = factor(group))) +
 
 What happens to the scores if the within-group variability were to be increased or decreased? Try the slider for the following plot to find out.
 
-```{r}
-plotOutput("sswplot")
-sliderInput("sswscale", "Sum of squares within:",min=0.2,max=50,value=11.9,step=.2)
-```
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 500
 
-```{r}
-#| context: server
+library(tibble) # CFF: this one also apparently required for shinylive to work
+library(dplyr)
+library(tidyr)
+library(shiny)
+library(munsell) # was included due to bug in getting ggplot2 to work with shinylive; still required for some reason
+#library(bslib) # For bootstrap UIs
+#library(bsicons) # for tooltip icons
+library(ggplot2)
 
-library(tidyverse)
-output$sswplot <- renderPlot({
-  
-  # set up dataset as before
-  datasets <- data.frame(
-    Control = c(4, 3, 5, 4, 5),
-    Mindfulness = c(4, 5, 6, 4, 6),
-    Walk = c(8, 7, 6, 5, 6)
-  )
+ui <- fluidPage(
+  plotOutput("sswplot"),
+  sliderInput("sswscale", "Sum of squares within:",min=0.2,max=50,value=11.9,step=.2)
+)
 
-  datasets_long <- datasets %>% pivot_longer(cols=c("Control","Mindfulness","Walk"), names_to="group")
-  
-  dat <- datasets_long
-  
-  grand_mean <- mean(dat$value)
-  group_means <- colMeans(datasets)
-  dat <- dat %>% group_by(group) %>% mutate(GroupMean = mean(value)) %>% ungroup()
-  # for within-group deviations
-  dat<- dat %>% mutate(start_val = recode(GroupMean, `4.2` = 0.5, `5` = 1.5, `6.4` = 2.5),
-                 end_val = recode(GroupMean, `4.2` = 1.5, `5` = 2.5, `6.4` = 3.5))
-  # for between-group deviations
-  dat<- dat %>% mutate(bwx = recode(GroupMean, `4.2` = 1, `5` = 2, `6.4` = 3))
-  
-  # jitter so that points don't overlap
-  pos <- position_jitter(width = 0.25, height = 0, seed = 123)
-  
-  # now, rescale due to slider
-  ssw <- dat %>% group_by(group) %>% summarise(ss = sd(value)*4) %>% summarise(ssw = sum(ss))
-  # ratio of ssw to new ssw
-  newssw <- input$sswscale
-  const <- as.numeric(newssw/ssw)
-  # rescale w/in each group
-  dat <- dat %>% group_by(group) %>%
-    mutate(z = (value - GroupMean)/sd(value),
-           sd = sd(value)) %>%
-    mutate(newvalue = sqrt(const)*sd*z + GroupMean)
-
-  sswplot <- ggplot(dat, aes(x = factor(group), y = newvalue, color = factor(group))) +
+server <- function(input, output) {
+  output$sswplot <- renderPlot({
     
-    # points
-    geom_point(position = pos, size = 3) +
+    # set up dataset as before
+    datasets <- data.frame(
+      Control = c(4, 3, 5, 4, 5),
+      Mindfulness = c(4, 5, 6, 4, 6),
+      Walk = c(8, 7, 6, 5, 6)
+    )
   
-    # group means + label
-    geom_segment(aes(x=start_val, xend = end_val, y=GroupMean, yend=GroupMean))+
-    annotate("text", x = 0.75, y = 5, label = "bar(x)[1]", 
-             parse = TRUE, size = 8, color = "black") + 
-    annotate("segment", x = 0.75, y = 4.75, xend = 0.85, yend = group_means[1] + 0.1, 
-             arrow = arrow(length = unit(0.3, "cm")),
-             linewidth = 1, color = "black") +
-    annotate("text", x = 1.75, y = 4, label = "bar(x)[2]", 
-             parse = TRUE, size = 8, color = "black") + 
-    annotate("segment", x = 1.75, y = 4.25, xend = 1.85, yend = group_means[2] -0.1, 
-             arrow = arrow(length = unit(0.3, "cm")),
-             linewidth = 1, color = "black") +
-    annotate("text", x = 2.5, y = 7.5, label = "bar(x)[3]", 
-             parse = TRUE, size = 8, color = "black") + 
-    annotate("segment", x = 2.5, y = 7.25, xend = 2.6, yend = group_means[3] + .01, 
-             arrow = arrow(length = unit(0.3, "cm")),
-             linewidth = 1, color = "black") +
+    datasets_long <- datasets %>% pivot_longer(cols=c("Control","Mindfulness","Walk"), names_to="group")
     
-    # deviations; xend used to keep consistent with jitter
-    geom_segment(aes(xend = factor(group), yend = GroupMean), 
-                 position = pos, 
-                 linetype = "dotted", 
-                 linewidth = 0.8) +
+    dat <- datasets_long
     
-    scale_color_brewer(palette = "Dark2", name = "Group") +
-    labs(y = "Well-being", x = "Group", title = "Sum of squares within (SSW)") +
-    theme_minimal(base_size = 15) + 
-    ylim(1, 10)
+    grand_mean <- mean(dat$value)
+    group_means <- colMeans(datasets)
+    dat <- dat %>% group_by(group) %>% mutate(GroupMean = mean(value)) %>% ungroup()
+    # for within-group deviations & between-group deviations
+    dat<- dat %>% mutate(start_val = recode(GroupMean, `4.2` = 0.5, `5` = 1.5, `6.4` = 2.5),
+                   end_val = recode(GroupMean, `4.2` = 1.5, `5` = 2.5, `6.4` = 3.5),
+                   bwx = recode(GroupMean, `4.2` = 1, `5` = 2, `6.4` = 3)
+                   )
+
+    # jitter so that points don't overlap
+    pos <- position_jitter(width = 0.25, height = 0, seed = 123)
+    
+    # now, rescale due to slider
+    ssw <- dat %>% group_by(group) %>% summarise(ss = sd(value)*4) %>% summarise(ssw = sum(ss))
+    # ratio of ssw to new ssw
+    newssw <- input$sswscale
+    const <- as.numeric(newssw/ssw)
+    # rescale w/in each group
+    dat <- dat %>% group_by(group) %>%
+      mutate(z = (value - GroupMean)/sd(value),
+             sd = sd(value)) %>%
+      mutate(newvalue = sqrt(const)*sd*z + GroupMean)
   
-  return(sswplot)
-})
+    sswplot <- ggplot(dat, aes(x = factor(group), y = newvalue, color = factor(group))) +
+      
+      # points
+      geom_point(position = pos, size = 3) +
+    
+      # group means + label
+      geom_segment(aes(x=start_val, xend = end_val, y=GroupMean, yend=GroupMean))+
+      annotate("text", x = 0.75, y = 5, label = "bar(x)[1]", 
+               parse = TRUE, size = 8, color = "black") + 
+      annotate("segment", x = 0.75, y = 4.75, xend = 0.85, yend = group_means[1] + 0.1, 
+               arrow = arrow(length = unit(0.3, "cm")),
+               linewidth = 1, color = "black") +
+      annotate("text", x = 1.75, y = 4, label = "bar(x)[2]", 
+               parse = TRUE, size = 8, color = "black") + 
+      annotate("segment", x = 1.75, y = 4.25, xend = 1.85, yend = group_means[2] -0.1, 
+               arrow = arrow(length = unit(0.3, "cm")),
+               linewidth = 1, color = "black") +
+      annotate("text", x = 2.5, y = 7.5, label = "bar(x)[3]", 
+               parse = TRUE, size = 8, color = "black") + 
+      annotate("segment", x = 2.5, y = 7.25, xend = 2.6, yend = group_means[3] + .01, 
+               arrow = arrow(length = unit(0.3, "cm")),
+               linewidth = 1, color = "black") +
+      
+      # deviations; xend used to keep consistent with jitter
+      geom_segment(aes(xend = factor(group), yend = GroupMean), 
+                   position = pos, 
+                   linetype = "dotted", 
+                   linewidth = 0.8) +
+      
+      scale_color_brewer(palette = "Dark2", name = "Group") +
+      labs(y = "Well-being", x = "Group", title = "Sum of squares within (SSW)") +
+      theme_minimal(base_size = 15) + 
+      ylim(1, 10)
+    
+    return(sswplot)
+  })  
+}
+
+shinyApp(ui = ui, server = server)
+
 ```
 
 - [As $SS_W$ increases, what happens to deviations between the scores and their respective group means?]{style="color: blue;"}
@@ -1091,148 +1034,6 @@ Since $SS_W$ is computed by looking at variability *within* each group, it repre
 
 :::
 
-<!--
-## Total variability
-
-We can calculate the total variability in the dataset as the sum of squared deviations from the grand mean.
--->
-<!--
-```{r}
-dataset3_reorganized <- data.frame(data = c(3,7,3,7,3,7,7,3,7,3,7,3))
-dataset3_reorganized$Deviations <- dataset3_reorganized$data - mean(dataset3_reorganized$data)
-dataset3_reorganized$`Squared Deviations` <- dataset3_reorganized$Deviations^2
-
-dataset3_reorganized
-paste0("Total Variability (Total Sum of Squares): ",sum(dataset3_reorganized$`Squared Deviations`))
-```
--->
-
-<!--
-## Between- and Within-Group Variability {.smaller}
-
-In a multiple-group dataset, we can divide the Total Variability into *between-group* and *within-group* components.
-
-In dataset 1, all of our variability is *within-group*; in dataset 2, all of our variability is *between-group*
-
-::::: {layout="[0.5, 0.5]"}
-::: {.column width="100%"}
-```{r}
-dataset3
-paste0("Total Variability (Total Sum of Squares): ",sum(dataset3_reorganized$`Squared Deviations`))
-paste0("Grand Mean = 5")
-paste0("Group 1 Mean = 5")
-paste0("Group 2 Mean = 5")
-paste0("Group 1 SD = 2.19")
-paste0("Group 2 SD = 2.19")
-```
-:::
-
-::: {.column width="100%"}
-```{r}
-dataset4_reorganized <- data.frame(data = c(3,3,3,3,3,3,7,7,7,7,7,7))
-dataset4_reorganized$Deviations <- dataset3_reorganized$data - mean(dataset3_reorganized$data)
-dataset4_reorganized$`Squared Deviations` <- dataset3_reorganized$Deviations^2
-
-dataset4
-paste0("Total Variability (Total Sum of Squares): ",sum(dataset4_reorganized$`Squared Deviations`))
-paste0("Grand Mean = 5")
-paste0("Group 1 Mean = 3")
-paste0("Group 2 Mean = 7")
-paste0("Group 1 SD = 0")
-paste0("Group 2 SD = 0")
-```
-:::
-:::::
-
-## Between- and Within-Group Variability
-
-Most datasets will have a mix of between-group and within-group variability.
-
-```{r}
-dataset5 <- data.frame(Group1 = c(8,4,3,7,4,1),Group2=c(1,7,4,3,4,2))
-dataset5
-```
-
-## Within-Group Variability
-
-*Within-group variability* refers to the sum of squared deviations between each score and the mean of its group.
-
-Here, the mean of group 1 is 4.5, and the mean of group 2 is 5.5. For each group, we calculate a sum of squares.
-
-::::: {layout="[0.5, 0.5]"}
-::: {.column width="100%"}
-```{r}
-dataset5_Group1 <- data.frame(Group1 = c(8,4,3,7,4,1))
-dataset5_Group1$Deviations <- dataset5_Group1$Group1 - mean(dataset5_Group1$Group1)
-dataset5_Group1$`Squared Deviations` <- dataset5_Group1$Deviations^2 
-dataset5_Group1
-```
-:::
-
-::: {.column width="100%"}
-```{r}
-dataset5_Group2 <- data.frame(Group2 = c(1,7,4,3,4,2)) 
-dataset5_Group2$Deviations <- dataset5_Group2$Group2 - mean(dataset5_Group2$Group2)
-dataset5_Group2$`Squared Deviations` <- dataset5_Group2$Deviations^2 
-dataset5_Group2
-```
-:::
-:::::
-
-If we sum the squared deviations from both group, we get:
-
-$$SS_{Within} = \sum(x_i - \bar{x_g})^2 = \sum(12.25 + .025 + ... + 2.25) = 55 $$
-
-## Between-group variability
-
-The flipside of within-group variability is *between-group* variability, representing how much the means of the two groups differ from the grand mean (accounting for group size).
-
-```{r}
-library(tidyr)
-dataset_5_long <- dataset5 %>% pivot_longer(cols=c("Group1","Group2"),names_to="Group")
-ggplot(data=dataset_5_long, aes(x=value, fill=Group)) +
-                  geom_dotplot(position="dodge") +
-  scale_y_continuous(name = "", breaks = NULL) +
-  #annotate("text",x=4.5,y=1,label=paste0("Mean = ",mean(dataset1$x)), vjust = 1, hjust = 0, colour="red") +
-  xlab("Dataset 2") + 
-  geom_vline(xintercept=4.5, colour="#FF61CC") +
-  geom_vline(xintercept=5.5,colour="#00BFC4") +
-  geom_vline(xintercept=5) +
-  #geom_segment(aes(x=4.4,xend=5,y=.2,yend=.2), colour="red") +
-  #geom_segment(aes(x=5,xend=5,y=.2,yend=0), colour="red") +
-  annotate("text",x=5,y=.3,label=paste0("The grand mean for both groups combined is 5"), vjust = 1, hjust = 0) +
-  annotate("text",x=4.5,y=.4,label=paste0("The mean of group 1 is 4.5"), vjust = 1, hjust = 0) +
-  annotate("text",x=5.5,y=.5,label=paste0("The mean of group 2 is 5.5"), vjust = 1, hjust = 0) +
-  theme_classic()
-```
-
-## Between-group variability
-
-```{r}
-library(tidyr)
-dataset_5_long <- dataset5 %>% pivot_longer(cols=c("Group1","Group2"),names_to="Group")
-ggplot(data=dataset_5_long, aes(x=value, fill=Group)) +
-                  geom_dotplot(position="dodge") +
-  scale_y_continuous(name = "", breaks = NULL) +
-  #annotate("text",x=4.5,y=1,label=paste0("Mean = ",mean(dataset1$x)), vjust = 1, hjust = 0, colour="red") +
-  xlab("Dataset 2") + 
-  geom_vline(xintercept=4.5, colour="#FF61CC") +
-  geom_vline(xintercept=5.5,colour="#00BFC4") +
-  geom_vline(xintercept=5) +
-  geom_segment(aes(x=4.5,xend=5,y=.2,yend=.2), colour="red") +
-  geom_segment(aes(x=5,xend=5.5,y=.4,yend=.4), colour="red") +
-  #annotate("text",x=5,y=.3,label=paste0("The grand mean for both groups combined is 5"), vjust = 1, hjust = 0) +
-  annotate("text",x=4.5,y=.4,label=paste0("The mean of group 1  (4.5) is .5 units less  \n than the grand mean (5)"), vjust = 1, hjust = 0) +
-  annotate("text",x=5.5,y=.5,label=paste0("The mean of group 2 is 5.5 is .5 units more \n than the grand mean (5)"), vjust = 1, hjust = 0) +
-  theme_classic()
-```
-
-## Between-group variability
-
-We can calculate it by squaring the difference between each group mean and the grand mean, and multiplying it by the group's sample size.
-
-$$SS_{Between} = \sum n_g(x_{g}-\bar{x})^2 = 6*(3.5-4)^2 + 6*(4.5 -4)^2 = 3 $$
--->
 
 ## Basic one-way ANOVA table
 
@@ -1352,12 +1153,6 @@ $$df_B = k-1 = 4 - 1 = 3$$
 $$df_W = n-k = 80 - 4 = 76$$
 :::
 
-<!--
-When we calculate (sample) variance, we divide our total variability by N-1 .-->
-
-<!--
-When we partition variability, we analogously divide our variability by our degrees of freedom; we call the result *Mean Square* values.-->
-
 Next, we analogously divide between- and within-group variability by their corresponding degrees of freedom. The result are two variance estimates called **mean squares between ($MS_B$)** and **mean squares within ($MS_W$)**.
 
 \begin{align*}
@@ -1458,62 +1253,62 @@ This resulting distribution of $F$-ratios can be thought of as a sampling distri
 
 The F distribution is actually a family of distributions, whose shape varies according to our degrees of freedom.
 
-Try adjusting the between- and within- degrees of freedom to change the shape of the F distribution
+Try adjusting the between- and within- degrees of freedom to change the shape of the F distribution.
 
-```{r}
-#| panel: fill
-plotlyOutput(outputId = "fdistributionPlot")
-```
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 700
 
-::::: {layout="[0.5, 0.5]"}
-::: {.column width="100%"}
-```{r}
-#| panel: fill
-sliderInput("df1", "Between-subjects df:",min=1,max=20,value=1,step=1)
-```
-:::
+library(tibble) # CFF: this one also apparently required for shinylive to work
+library(dplyr)
+library(tidyr)
+library(shiny)
+library(munsell) # was included due to bug in getting ggplot2 to work with shinylive; still required for some reason
+#library(bslib) # For bootstrap UIs
+#library(bsicons) # for tooltip icons
+library(ggplot2)
 
-::: {.column width="100%"}
-```{r}
-#| panel: fill
-sliderInput("df2", "Within-subjects df:",min=1,max=50,value=10,step=1)
-```
-:::
-:::::
+ui <- fluidPage(
+  plotOutput(outputId = "fdistributionPlot"),
+  sliderInput("df1", "Between-subjects df:",min=1,max=20,value=1,step=1),
+  sliderInput("df2", "Within-subjects df:",min=1,max=50,value=10,step=1)
+)
 
-```{r}
-#| context: server
-library(plotly)
-theme_minimalism <- function(){
-  theme_minimal() + # ggplot's minimal theme hides many unnecessary features of plot
-  theme(            # make modifications to the theme
-    panel.grid.major.y=element_blank(),   # hide major grid for y axis
-    panel.grid.minor.y=element_blank(),   # hide minor grid for y axis
-    panel.grid.major.x=element_blank(),   # hide major grid for x axis
-    panel.grid.minor.x=element_blank(),   # hide minor grid for x axis
-    text=element_text(size=14),           # font aesthetics 
-    axis.text=element_text(size=12),
-    axis.title=element_text(size=14,face="bold"))
+server <- function(input, output) {
+  theme_minimalism <- function(){
+    theme_minimal() + # ggplot's minimal theme hides many unnecessary features of plot
+    theme(            # make modifications to the theme
+      panel.grid.major.y=element_blank(),   # hide major grid for y axis
+      panel.grid.minor.y=element_blank(),   # hide minor grid for y axis
+      panel.grid.major.x=element_blank(),   # hide major grid for x axis
+      panel.grid.minor.x=element_blank(),   # hide minor grid for x axis
+      text=element_text(size=14),           # font aesthetics 
+      axis.text=element_text(size=12),
+      axis.title=element_text(size=14,face="bold"))
+  }
+  
+  output$fdistributionPlot <- renderPlot({
+    ggplot(data=data.frame(x=c(0:6)),aes(x)) +
+    stat_function(fun=df,
+                  args=list(df1=input$df1, df2=input$df2),
+                  geom="area", 
+                  linetype="solid", 
+                  fill=NA, 
+                  size=1.25,
+                  aes(color="Null Distribution"), 
+                  xlim=c(0,6)) +
+    scale_x_continuous(limits=c(0,6),
+                       breaks= seq(0,6, by=1)) +
+    scale_y_continuous(breaks=NULL) +
+    ylab("Density")+
+    xlab("F ratio")+
+    scale_colour_manual("Legend",values = c("#a6cee3","#b2df8a")) +
+    theme_minimalism()
+  })
 }
 
-output$fdistributionPlot <- renderPlotly({
-  ggplot(data=data.frame(x=c(0:6)),aes(x)) +
-  stat_function(fun=df,
-                args=list(df1=input$df1, df2=input$df2),
-                geom="area", 
-                linetype="solid", 
-                fill=NA, 
-                size=1.25,
-                aes(color="Null Distribution"), 
-                xlim=c(0,6)) +
-  scale_x_continuous(limits=c(0,6),
-                     breaks= seq(0,6, by=1)) +
-  scale_y_continuous(breaks=NULL) +
-  ylab("Density")+
-  xlab("F ratio")+
-  scale_colour_manual("Legend",values = c("#a6cee3","#b2df8a")) +
-  theme_minimalism()
-})
+shinyApp(ui = ui, server = server)
+
 ```
 
 We can use the F distribution for significance testing, following logic that large $F$-ratios would be surprising to obtain if $H_0$ were true:
@@ -1579,146 +1374,152 @@ For illustrative purposes, we consider the case where ANOVA is applied to just t
 
 Suppose $SS_T$ is fixed to a certain value. Try adjusting the relative proportion of between- and within- group variability. How does the F-ratio change as a result?
 
-::::: {layout="[0.33, 0.33, 0.33]"}
-::: {.column width="100%"}
-```{r}
-#| panel: fill
-plotOutput(outputId = "fratioPlot")
-#SSB <- 5
-#SSW <- 2
-#MSB <- SSB/1
-#MSW <- round(SSB/18,2)
-#f <- round(MSB/MSW,2)
-```
-:::
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 700
 
+library(tibble) # CFF: this one also apparently required for shinylive to work
+library(dplyr)
+library(tidyr)
+library(shiny)
+library(munsell) # was included due to bug in getting ggplot2 to work with shinylive; still required for some reason
+#library(bslib) # For bootstrap UIs
+#library(bsicons) # for tooltip icons
+library(ggplot2)
+
+ui <- fluidPage(
+  column(width = 12, plotOutput(outputId = "fratioPlot")),
+  column(width = 2,   sliderInput("weight",
+                                  "Proportion of variability due to between groups:",
+                                  min=.01, max=.99, value=.25, step=.01)),
+  column(width = 10, tableOutput("anovaTable"))
+)
+
+server <- function(input, output) {
+  dat <- data.frame(Raw = c(9,8,2,4,6,7,2,3,8,4,7,4,10,8,8,2,5,7.7325,9,6),
+                   Group = c(1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2))
+
+  datnew <- eventReactive({input$weight}, {
+    w <- input$weight
+    
+    # group and grand means
+    dat <- dat %>% group_by(Group) %>% mutate(GroupMean = mean(Raw)) %>% ungroup() %>% mutate(GrandMean = mean(Raw))
+    grand_mean <- mean(dat$Raw)
+    group_means <- dat %>% group_by(Group) %>% summarise(GroupMeans = mean(Raw)) %>% select(GroupMeans)
+    
+    SST <- as.numeric(dat %>% summarise(SST = sum((Raw - GrandMean)^2)))
+    
+    # Actual SSW and SSB based on raw data
+    SSW <- as.numeric(dat %>% group_by(Group) %>% mutate(dev2 = (Raw - GroupMean)^2) %>% ungroup() %>%
+      summarise(SSW = sum(dev2)))
+    SSB <- as.numeric(dat %>% group_by(Group) %>% summarise(GroupMean = mean(GroupMean),
+                                          GrandMean = mean(GrandMean)) %>%
+      mutate(ndev2 = 10*(GroupMean - GrandMean)^2) %>%
+      summarise(SSB = sum(ndev2)))
+  
+    # New targets based on slider
+    targetSSB <- w*SST
+    targetSSW <- SST - targetSSB
+  
+    # Rescale SSB
+    new_sdg <- sqrt((targetSSB/1) / 10) # 10 is sample size per group; 1 is df
+    new_group_means <- as.vector(new_sdg*scale(group_means) + grand_mean)
+    mean_diff <- group_means - new_group_means
+    dat <- merge(dat, data.frame(Group = c(1,2),
+               new_group_mean = new_group_means))
+    dat <- dat %>% mutate(mean_diff = GroupMean - new_group_mean,
+                          newvalue = Raw - (GroupMean - new_group_mean))
+    dat$Raw <- dat$newvalue
+    dat$GroupMean <- dat$new_group_mean
+    
+    # Rescale SSW
+    # ratio of ssw to new ssw
+    const <- as.numeric(targetSSW/SSW)
+    # rescale w/in each group
+    dat <- dat %>% group_by(Group) %>%
+      mutate(z = (Raw - GroupMean)/sd(Raw),
+             sd = sd(Raw)) %>%
+      mutate(newScore = sqrt(const)*sd*z + GroupMean)
+    
+    # compute values for output
+    SSW <- round(targetSSW,2)
+    SSB <- round(targetSSB,2)
+    MSW <- round(targetSSW/18,2)
+    MSB <- round(targetSSB/1,2)
+    
+    Fratio <- (targetSSB/1)/(targetSSW/18)
+    Fratio <- round(Fratio, 2)
+    pval <- pf(Fratio, 1, 18, lower.tail=FALSE)
+    pval <- round(pval, 3)
+
+    return(list(newdat = dat, group_means = new_group_means,
+                SSW = SSW, SSB = SSB, MSW=MSW, MSB=MSB, Fratio=Fratio, pval=pval))
+  })
+  
+  output$fratioPlot <- renderPlot({
+    #if (weight() > 0) {dat$Score <- dat$Raw - dat$Diff_bet*weight()} else {dat$Score <- dat$Raw - dat$Diff_wit*abs(weight())}
+    tmp <- datnew()
+    newdat <- tmp$newdat
+    newdat <- newdat %>% mutate(Group = as.factor(Group))
+    ggplot(data=newdat, aes(x=newScore, fill=Group)) +
+                    geom_dotplot(position="dodge") +
+    scale_y_continuous(name = "", breaks = NULL) +
+    scale_fill_brewer(palette = "Dark2") + 
+    annotate("text",x=5.5,y=.7,label=paste0("Group 1 Mean: ", round(tmp$group_means[1],2)), vjust = 1, hjust = 0, size=8) +
+    annotate("text",x=5.5,y=.5,label=paste0("Group 2 Mean: ", round(tmp$group_means[2],2)), vjust = 1, hjust = 0, size=8) +
+    xlab("Scores") + 
+    xlim(1, 10) +
+    theme_classic(base_size = 17)
+  })
+  
+  # Used to double-check calculations
+  # output$SSW <- renderText({
+  #   newdat <- datnew()$newdat
+  #   dat_g1 <- filter(newdat,Group==1)
+  #   dat_g2 <- filter(newdat,Group==2)
+  #   ssw <- sum((dat_g1$newScore-mean(dat_g1$newScore))^2 ) +  sum((dat_g2$newScore-mean(dat_g2$newScore))^2 )
+  #   round(ssw, 2)
+  #  })
+  #  
+  # output$SSB <- renderText({
+  #   newdat <- datnew()$newdat
+  #   dat_g1 <- filter(newdat,Group==1)
+  #   dat_g2 <- filter(newdat,Group==2)
+  #   ssb <- (mean(dat_g1$newScore) - mean(newdat$newScore))^2*10 + (mean(dat_g2$newScore) - mean(newdat$newScore))^2*10
+  #   round(ssb, 2)
+  # })
+  
+  
+  output$anovaTable <- renderTable({
+
+    dat <- datnew()
+    
+    df <- data.frame(
+      Source = c("Between", "Within", "Total"),
+      SS     = c(dat$SSB, dat$SSW, 125),
+      df     = c(1L, 18L, 19L),
+      MS     = c(dat$MSB, dat$MSW, ""),
+      F      = c(dat$Fratio, "", ""),
+      p      = c(dat$pval, "", "")
+    )
+    df
+  }, digits=c(NA, 2, 0, 3, 3, 8))
+
+  
+}
+shinyApp(ui = ui, server = server)
+```
+
+<!--
 ::: {.column width="100%"}
 | Source  | SS                      | df  | MS        | F       | p   |
 |---------|-------------------------|-----|-----------|---------|-----|
-| Between | `{r} textOutput("SSB")` | 1   | `{r} textOutput("MSB")` | `{r} textOutput("Fratio")` |  `{r} textOutput("pval")`   |
-| Within  | `{r} textOutput("SSW")` | 18  | `{r} textOutput("MSW")` |         |     |
+| Between | {r} textOutput("SSB") | 1   | {r} textOutput("MSB") | {r} textOutput("Fratio") |  {r} textOutput("pval")   |
+| Within  | {r} textOutput("SSW") | 18  | {r} textOutput("MSW") |         |     |
 | Total   | 125                     | 19  |           |         |     |
 :::
 :::::
-
-::: {.column width="100%"}
-```{r}
-#| panel: fill
-sliderInput("weight", "Proportion of variability due to between groups:",min=.01,max=.99,value=.25,step=.01)
-```
-:::
-
-```{r}
-#| context: server
-dat <- data.frame(Raw = c(9,8,2,4,6,7,2,3,8,4,7,4,10,8,8,2,5,7.7325,9,6),
-                   Group = c(1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2))
-
-datnew <- eventReactive({input$weight}, {
-  w <- input$weight
-  
-  # group and grand means
-  dat <- dat %>% group_by(Group) %>% mutate(GroupMean = mean(Raw)) %>% ungroup() %>% mutate(GrandMean = mean(Raw))
-  grand_mean <- mean(dat$Raw)
-  group_means <- dat %>% group_by(Group) %>% summarise(GroupMeans = mean(Raw)) %>% select(GroupMeans)
-  
-  SST <- as.numeric(dat %>% summarise(SST = sum((Raw - GrandMean)^2)))
-  
-  # Actual SSW and SSB based on raw data
-  SSW <- as.numeric(dat %>% group_by(Group) %>% mutate(dev2 = (Raw - GroupMean)^2) %>% ungroup() %>%
-    summarise(SSW = sum(dev2)))
-  SSB <- as.numeric(dat %>% group_by(Group) %>% summarise(GroupMean = mean(GroupMean),
-                                        GrandMean = mean(GrandMean)) %>%
-    mutate(ndev2 = 10*(GroupMean - GrandMean)^2) %>%
-    summarise(SSB = sum(ndev2)))
-
-  # New targets based on slider
-  targetSSB <- w*SST
-  targetSSW <- SST - targetSSB
-
-  # Rescale SSB
-  new_sdg <- sqrt((targetSSB/1) / 10) # 10 is sample size per group; 1 is df
-  new_group_means <- as.vector(new_sdg*scale(group_means) + grand_mean)
-  mean_diff <- group_means - new_group_means
-  dat <- merge(dat, data.frame(Group = c(1,2),
-             new_group_mean = new_group_means))
-  dat <- dat %>% mutate(mean_diff = GroupMean - new_group_mean,
-                        newvalue = Raw - (GroupMean - new_group_mean))
-  dat$Raw <- dat$newvalue
-  dat$GroupMean <- dat$new_group_mean
-  
-  # Rescale SSW
-  # ratio of ssw to new ssw
-  const <- as.numeric(targetSSW/SSW)
-  # rescale w/in each group
-  dat <- dat %>% group_by(Group) %>%
-    mutate(z = (Raw - GroupMean)/sd(Raw),
-           sd = sd(Raw)) %>%
-    mutate(newScore = sqrt(const)*sd*z + GroupMean)
-  
-  # compute values for output
-  output$SSW <- renderText({
-    round(targetSSW,2)
-  })
-  
-  output$SSB <- renderText({
-    round(targetSSB,2)
-  })
-  
-  output$MSW <- renderText({
-    round(targetSSW/18,2)
-  })
-  
-  output$MSB <- renderText({
-    round(targetSSB/1,2)
-  })
-  
-  Fratio <- (targetSSB/1)/(targetSSW/18)
-  output$Fratio <- renderText({
-    round(Fratio, 2)
-  })
-  
-  output$pval <- renderText({
-    pval <- pf(Fratio, 1, 18, lower.tail=FALSE)
-    round(pval, 4)
-  })
-  
-  return(list(newdat = dat, group_means = new_group_means))
-})
-
-output$fratioPlot <- renderPlot({
-  #if (weight() > 0) {dat$Score <- dat$Raw - dat$Diff_bet*weight()} else {dat$Score <- dat$Raw - dat$Diff_wit*abs(weight())}
-  tmp <- datnew()
-  newdat <- tmp$newdat
-  newdat <- newdat %>% mutate(Group = as.factor(Group))
-  ggplot(data=newdat, aes(x=newScore, fill=Group)) +
-                  geom_dotplot(position="dodge") +
-  scale_y_continuous(name = "", breaks = NULL) +
-  scale_fill_brewer(palette = "Dark2") + 
-  annotate("text",x=5.5,y=.7,label=paste0("Group 1 Mean: ", round(tmp$group_means[1],2)), vjust = 1, hjust = 0) +
-  annotate("text",x=5.5,y=.5,label=paste0("Group 2 Mean: ", round(tmp$group_means[2],2)), vjust = 1, hjust = 0) +
-  xlab("Scores") + 
-  xlim(1, 10) +
-  theme_classic()
-})
-
-# Used to double-check calculations
-# output$SSW <- renderText({
-#   newdat <- datnew()$newdat
-#   dat_g1 <- filter(newdat,Group==1)
-#   dat_g2 <- filter(newdat,Group==2)
-#   ssw <- sum((dat_g1$newScore-mean(dat_g1$newScore))^2 ) +  sum((dat_g2$newScore-mean(dat_g2$newScore))^2 )
-#   round(ssw, 2)
-#  })
-#  
-# output$SSB <- renderText({
-#   newdat <- datnew()$newdat
-#   dat_g1 <- filter(newdat,Group==1)
-#   dat_g2 <- filter(newdat,Group==2)
-#   ssb <- (mean(dat_g1$newScore) - mean(newdat$newScore))^2*10 + (mean(dat_g2$newScore) - mean(newdat$newScore))^2*10
-#   round(ssb, 2)
-# })
-
-```
+-->
 
 - [Is the $F$-ratio larger when $SS_B$ is large or when $SS_W$ is large?]{style="color: blue;"}
 
@@ -1964,207 +1765,7 @@ Dataset 2:
 
 | Source  | SS  | df  | MS  | F   |
 |---------|-----|-----|-----|-----|
-| Between | 48   | 1   | 48   | \infty  |
-| Within  | 0  | 10  | 0 |     |
+| Between | 48   | 1   | 48   | undefined (48/0)  |
+| Within  | 0  | 10  | 0 |  0   |
 | Total   | 48  | 11  |     |     |
 :::
-
-<!--
-# Part 3: Linear regression
-
-## Linear Regression
-
-When conducting a simple regression analysis, we start with (at least) one continuous independent variable and a continuous dependent variable.
-
-```{r scatterplot}
-data_scatterplot <- data.frame(x=c(9,8,9,7,4,3,6,6,7,5),y=c(5,4,1,3,5,2,5,0,2,4))
-ggplot(data=data_scatterplot, aes(x=x,y=y)) +
-  geom_point()
-```
-
-## Regression Line (Line of Best Fit)
-
-We then fit these data with a "line of best fit", which represents the model's best predicted Y value for a given X-value
-
-```{r}
-ggplot(data=data_scatterplot, aes(x=x,y=y)) +
-  geom_point() +
-  geom_smooth(method='lm', formula= y~x)
-```
-
-## Predicted Values
-
-We can see that the line doesn't perfectly match the data; for example, the model says for an x value of 5, we should get a y value of 4 ($\hat{y}=4$)
-
-```{r}
-ggplotly(ggplot(data=data_scatterplot, aes(x=x,y=y)) +
-  geom_point() +
-  geom_smooth(method='lm', formula= y~x) +
-  geom_segment(aes(x=3,xend=5,y=3.15,yend=3.15), colour="red") +
-  geom_segment(aes(x=5,xend=5,y=0,yend=3.15), colour="red") +
-  annotate("text",x=4,y=4,label=paste0("We if observe an x value of 5 ..."), vjust = 1, hjust = 0, colour="red") +
-    annotate("text",x=5,y=3.5,label=paste0(" ... the model says we should have a y value of 3.15"), vjust = 1, hjust = 0, colour="red"))
-
-
-```
-
-## Predicted Values
-
-```{r}
-
-ggplotly(ggplot(data=data_scatterplot, aes(x=x,y=y)) +
-  geom_point() +
-  geom_smooth(method='lm', formula= y~x) +
-  geom_segment(aes(x=5,xend=5,y=4,yend=3.15), colour="red"))
-
-
-```
-
-But, we have a datapoint with an x value of 5 and a y value of 4. Our model is off by 0.85 units.
-
-## Residuals {.smaller}
-
-This discrepancy between our model predicted value ($\hat{y_i}$) and our observed value ($y_i$) is called a *residual* ($e_i$). The residual value for this datapoint is .85.
-
-```{r}
-ggplotly(ggplot(data=data_scatterplot, aes(x=x,y=y)) +
-  geom_point() +
-  geom_smooth(method='lm', formula= y~x) +
-  geom_segment(aes(x=5,xend=5,y=4,yend=3.15), colour="red"))
-```
-
-We can think of the residual as how wrong our model is for this given datapoint. It's similar to the variability of a datapoint from the mean, expect the "mean" here is the predicted value ($\hat{y_i}$) as determined by the regression line.
-
-## Residuals for estimation {.smaller}
-
-We can sum together the residuals from a regression line to get a metric of how accurate out model is. Here, the solid line fits the data better than the dashed line, and its total squared residuals is less than the dashed line.
-
-```{r}
-ggplotly(ggplot(data=data_scatterplot, aes(x=x,y=y)) +
-  geom_point() +
-  geom_smooth(method='lm', formula= y~x) +
-  geom_abline(slope=.2, intercept=3,linetype="dashed") +
-    annotate("text", x=7, y=5.5,label=paste0("Sum of Squared Residuals (Solid line): ",round(sum(resid(lm(y ~ x, data=data_scatterplot))^2),2)),hjust=0) +
-    annotate("text", x=7, y=5,label=paste0("Sum of Squared Residuals (Dashed line): ",round(sum((data_scatterplot$y-(3 + .2*data_scatterplot$x))^2),2),hjust=0))
-  )
-```
-
-## Analytical vs. Iterative Estimation {.smaller}
-
-In linear regression, there is an *analytical solution*, meaning we can plug in a formula to get the line of best fit.
-
-In more complicated forms of regression, there isn't a formula to give us the answer; instead, we need to iteratively estimate the parameters
-
-That means we guess ("estimate") a value for the intercept and slope; we then use the residuals to assess how wrong our estimate is.
-
-```{r}
-ggplotly(ggplot(data=data_scatterplot, aes(x=x,y=y)) +
-  geom_point() +
-  geom_abline(slope=.2, intercept=3,linetype="dashed") +
-  annotate("text", x=8, y=5,label=paste0("Sum of Squared Residuals (First iteration): ",sum((data_scatterplot$y-(3 + .2*data_scatterplot$x))^2),hjust=0)))
-```
-
-## Iterative Estimation
-
-Then, we change the slope and intercept estimates a little, and assess the residuals again. If overall the residuals have gotten smaller, then we know these new estimates are more accurate.
-
-```{r}
-ggplotly(ggplot(data=data_scatterplot, aes(x=x,y=y)) +
-  geom_point() +
-  geom_abline(slope=.2, intercept=3,linetype="dashed", colour="grey") +
-  geom_abline(slope=-.05, intercept=3.2,linetype="dashed") +
-  annotate("text", x=6, y=5,label=paste0("Sum of Squared Residuals (First iteration): ",sum((data_scatterplot$y-(3 + .2*data_scatterplot$x))^2),hjust=0)) +
-  annotate("text", x=6, y=4.5,label=paste0("Sum of Squared Residuals (Second iteration): ",sum((data_scatterplot$y-(3.2 + -.05*data_scatterplot$x))^2),hjust=0)))
-```
-
-We repeat this process until our model stops improving (that is, the sum of squared residuals stops getting smaller)
-
-## (Negative) Log Likelihood
-
-For computational reasons, we typically don't usually work with residuals directly.
-
-Instead, we transform the our residuals into (negative) *log likelihood values*
-
-The closer the negative log likelihood value is to zero, the more closely our model fits the data.
-
-## Minimizing Negative Log Likelihood
-
-Try it out for yourself; adjust the slope and intercept estimates until the negative log likelihood value is as small as it can be.
-
-```{r}
-#| panel: fill
-plotlyOutput(outputId = "maximumLikelihoodPlot")
-```
-
-::::: {layout="[0.5, 0.5]"}
-::: {.column width="100%"}
-```{r}
-#| panel: fill
-sliderInput("intercept", "Intercept:",min=0,max=100,value=38.61980885,step=1)
-```
-:::
-
-::: {.column width="70%"}
-```{r}
-#| panel: fill
-sliderInput("slope", "Slope:",min=-2,max=2,value=0.246209999,step=.1)
-```
-:::
-:::::
-
-```{r}
-#| context: server
-library(plotly)
-theme_minimalism <- function(){
-  theme_minimal() + # ggplot's minimal theme hides many unnecessary features of plot
-  theme(            # make modifications to the theme
-    panel.grid.major.y=element_blank(),   # hide major grid for y axis
-    panel.grid.minor.y=element_blank(),   # hide minor grid for y axis
-    panel.grid.major.x=element_blank(),   # hide major grid for x axis
-    panel.grid.minor.x=element_blank(),   # hide minor grid for x axis
-    text=element_text(size=14),           # font aesthetics 
-    axis.text=element_text(size=12),
-    axis.title=element_text(size=14,face="bold"))
-}
-
-output$maximumLikelihoodPlot <- renderPlotly({
-  lower <- 0
-  upper <- 120
-  x <- c(41,21,9,37,91,15,100,59,35,93,80,34,10,51,86,59,73,23,59,79,27,70,25,56,85)
-  y <- c(52,56,1,16,93,84,86,86,1,4,11,55,69,92,86,6,1,85,50,88,20,81,36,35,96)
-  dat <- data.frame(x,y)
-  res <- lm(y ~ x, data=dat)
-  intercept <- res$coefficients[1]
-  slope <- res$coefficients[2]
-  n <- 25
-  fitValues <- input$intercept+(x*input$slope)
-  sumsquares <- (y-(input$intercept+(x*input$slope)))^2
-  ll <- 0.5*(0-n*(log(2*pi)+1-log(n)+log(sum(sumsquares))))
-  
-plot3 <- ggplot(data=dat,aes(x=x,y=y)) +
-  geom_point() +
-  geom_abline(
-    slope=slope,
-    intercept=intercept,
-    color="grey",
-    alpha=.5) +
-  geom_abline(
-    slope=input$slope,
-    intercept=input$intercept) +
-  annotate("text",x=100,y=100,label=paste0("Log Likelihood = ",ll),vjust=5,hjust=3) +
-  #Clears the y-axis label
-  ylab("Y-Values") +
-  xlab("X-Values") +
-  #Sets the x axis ticks to cover the whole plot
-  #scale_x_continuous(limits=c(lower,upper),breaks= seq(round(lower),round(upper),by=1)) +
-  #Clears the y-axis ticks
-  #scale_y_continuous(breaks=NULL) +
-  theme_minimalism()
-
-for (i in 1:n) {
-   plot3 <- plot3 + geom_segment(x=x[i], y=y[i], xend=x[i], yend=fitValues[i], colour="grey", alpha=.25)
-}
-  plot3
-})
-```
--->
