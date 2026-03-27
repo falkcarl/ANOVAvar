@@ -1752,6 +1752,9 @@ Dataset 1 has the larger $SS_W$.
 - [Complete an ANOVA table for each dataset. Which dataset is more likely to reject $H_0$?]{style="color: blue;"}
 
 :::{.details summary = "Click here to see answer"}
+
+These example datasets are so extreme, Dataset 1 has no between-group variability, and Dataset 2 has all of the variability between-groups to the point that the F ratio is not defined. If there were at least a tiny bit of within-group variability, dataset 2 would reject $H_0$.
+
 Dataset 1:
 
 | Source  | SS  | df  | MS  | F   |
