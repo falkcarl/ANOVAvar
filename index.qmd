@@ -1,0 +1,2170 @@
+---
+title: "Variability in ANOVA"
+author: "Jeremy Rappel, Mira Saad, Carl F. Falk, Jens Kreitewolf"
+format:
+  html:
+    toc: true
+    toc-expand: 1
+    toc-depth: 2
+    toc-location: left
+filters:
+  - details
+  #- diagram
+#  - shinylive
+editor: source
+server: shiny
+engine: knitr
+---
+
+<!-- This only needed if webr is used -->
+<!--{{< include ./_extensions/r-wasm/live/_knitr.qmd >}}-->
+<!-- quarto add r-wasm/quarto-live -->
+
+```{r setup}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+# Overview
+
+This interactive statistics module is intended to review concepts regarding the variability of a single quantitative variable. We consider its variability in the context of linear models such as ANOVA<!-- and linear regression-->.
+
+This module is intended as to be non-technical, with the intended audience being social science undergraduates. It is also intended to supplement instruction regarding such concepts<!--, not replace instruction-->.
+
+## Learning outcomes
+
+The module is divided into two sections. By the end of each section, it is expected that students should be able to do the following:
+
+1. Review 
+    - Understand how variance and standard deviation are computed.
+    - Understand visualizations and conceptual descriptions of variability based in part on the sample variance formula.
+2. Analysis of variance (ANOVA)
+    - Understand how variance is partitioned in a one-way between subjects ANOVA.
+    - Be able to articulate how changes in the different sources of variance may affect the omnibus F-test.
+    - Apply knowledge of the sources of variances to inform the chances of rejecting the null hypothesis for the omnibus test.
+    
+<!--3. Linear regression
+    - Understand through visualizations that least-squares uniquely minimizes the sum of squared deviations.
+    - Understand how uncertainty in finite samples affects regression line estimates.-->
+
+# Part 1: Review of Variability and Variance
+
+## Example Datasets
+
+These two datasets have the same mean. Yet, dataset 1 is clustered around the mean; dataset 2 is more spread out.
+
+```{r}
+library(ggplot2)
+library(patchwork)
+library(plotly)
+library(kableExtra)
+
+theme_minimalism <- function(){
+  theme_minimal() + # ggplot's minimal theme hides many unnecessary features of plot
+  theme(            # make modifications to the theme
+    panel.grid.major.y=element_blank(),   # hide major grid for y axis
+    panel.grid.minor.y=element_blank(),   # hide minor grid for y axis
+    panel.grid.major.x=element_blank(),   # hide major grid for x axis
+    panel.grid.minor.x=element_blank(),   # hide minor grid for x axis
+    text=element_text(size=14),           # font aesthetics 
+    axis.text=element_text(size=12),
+    axis.title=element_text(size=14,face="bold"))
+}
+dataset1 <- as.data.frame(c(6,5,3,5,6,4,3,4,4,4))
+colnames(dataset1) <- "x"
+dataset2 <- as.data.frame(c(5,2,1,7,4,8,7,1,1,8))
+colnames(dataset2) <- "x"
+
+plot1 <- ggplot(data=dataset1, aes(x=x)) +
+                  geom_dotplot() +
+  scale_y_continuous(name = "", breaks = NULL) +
+  annotate("text",x=Inf,y=Inf,label=paste0("Mean = ",mean(dataset1$x)), vjust = 1, hjust = 1) +
+  #annotate("text",x=Inf,y=Inf,label=paste0("Range = ",max(dataset1$x)-min(dataset1$x)), vjust = 3, hjust = 1) +
+  ggtitle("Dataset 1") +
+  xlab("x") + 
+  theme_classic(base_size = 25) +
+  xlim(0, 9)
+
+plot2 <- ggplot(data=dataset2, aes(x=x)) +
+                  geom_dotplot() +
+  scale_y_continuous(name = "", breaks = NULL) +
+  annotate("text",x=Inf,y=Inf,label=paste0("Mean = ",mean(dataset2$x)), vjust = 1, hjust = 1) +
+  #annotate("text",x=Inf,y=Inf,label=paste0("Range = ",max(dataset2$x)-min(dataset2$x)), vjust = 3, hjust = 1) +
+  ggtitle("Dataset 2") +
+  xlab("x") + 
+  theme_classic(base_size = 25)+
+  xlim(0, 9)
+
+```
+
+::: {.panel-tabset}
+
+### Plots
+
+::::: {layout="[0.5, 0.5]"}
+::: {.column width="50%"}
+```{r}
+plot1
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+plot2
+```
+:::
+:::::
+
+### Raw Data
+
+::::: {layout="[0.5, 0.5]"}
+::: {.column width="50%"}
+
+Dataset 1
+```{r}
+knitr::kable(dataset1, align='c')
+```
+:::
+
+::: {.column width="50%"}
+
+Dataset 2
+```{r}
+knitr::kable(dataset2, align='c')
+```
+:::
+:::::
+
+:::
+
+
+```{r}
+#| panel: fill
+#| eval: false
+plotOutput("plotscale")
+sliderInput("scalesd", "Standard deviation:",min=1,max=5,value=2.5,step=.5)
+```
+
+```{r}
+#| context: server
+#| eval: false
+
+set.seed(5234)
+dattoscale <- rnorm(25, 0, 5)
+
+output$plotscale <- renderPlot({
+  
+  tmpz <- scale(dattoscale)
+  tmpc <- input$scalesd*tmpz
+  tmpc <- data.frame(x = tmpc)
+  plotscale <- ggplot(data=tmpc, aes(x=x)) +
+                  geom_dotplot() +
+  scale_y_continuous(name = "", breaks = NULL) +
+  annotate("text",x=Inf,y=Inf,label=paste0("Mean = ",round(mean(tmpc$x))), vjust = 1, hjust = 1) +
+  annotate("text",x=Inf,y=Inf,label=paste0("SD = ",sd(tmpc$x)), vjust = 2, hjust = 1) +
+  #annotate("text",x=Inf,y=Inf,label=paste0("Range = ",max(dataset1$x)-min(dataset1$x)), vjust = 3, hjust = 1) +
+  xlab("x") + 
+  theme_classic(base_size = 20) +
+  xlim(-20, 20)
+  
+  return(plotscale)
+})
+
+```
+
+## Variability, sum of squared deviations
+
+This "spread" of the data can be conceptualized as **variability**, or the degree to which data points are different from each other.
+
+One way to conceptualize variability is to consider how close data points are to the sample mean ($\bar{x}$).
+
+::: {.column-margin}
+Sample mean: $\bar{x}$
+:::
+
+We can determine how close a given observation is to the mean by simply computing a **deviation** between the score and the sample mean, $x_i - \bar{x}$. In other words, subtract the sample mean from the score.
+
+::: {.column-margin}
+Deviation (between observation and mean): $x_i - \bar{x}$
+
+The subscript $i$ is an index or placeholder for a single observation
+:::
+
+```{r}
+#| out-width: "90%"
+
+ggplot(data=dataset2, aes(x=x)) +
+                  geom_dotplot() +
+  scale_y_continuous(name = "", breaks = NULL) +
+  annotate("text",x=4.5,y=1,label=paste0("Mean = ",mean(dataset1$x)), vjust = 1, hjust = 0, colour="red", size=5) +
+  xlab("Dataset 2") + 
+  geom_vline(xintercept=4.4, colour="red") +
+  geom_segment(aes(x=4.4,xend=5,y=.2,yend=.2), colour="red") +
+  geom_segment(aes(x=5,xend=5,y=.2,yend=0), colour="red") +
+  annotate("text",x=4.5,y=.4,label=paste0("This observation has a value of 5; Is is \n .6 units greater than the mean of 4.4."), vjust = 1, hjust = 0, colour="red", size=5) +
+  theme_classic(base_size = 20)+
+  xlim(0,10)
+```
+
+In this example from Dataset 2 and for one observation, $x_i - \bar{x} = 5 - 4.4 = 0.6$.
+
+<!--On the way to quantifying variability for a sample-->
+
+On the way to getting an overall picture of variability for a sample, we could first compute deviations for all of the scores in the sample. Here are all of the deviations for the scores in these datasets:
+
+```{r}
+dataset1$Deviations <- dataset1$x -mean(dataset1$x)
+dataset2$Deviations <- dataset2$x -mean(dataset2$x)
+```
+
+::: {.panel-tabset}
+
+### Dataset 1
+
+```{r}
+knitr::kable(dataset1, align=c('c','c'))
+```
+
+### Dataset 2 {.active}
+
+```{r}
+knitr::kable(dataset2, align=c('c','c'))
+```
+
+:::
+
+<!--What to do now with these deviation scores?-->
+<!--For a single number that quantifies the variability of each dataset,-->
+<!--If we wanted to get an overall picture of variability, -->
+
+Next, we compute **squared deviations**, $(x_i - \bar{x})^2$. That is, square the deviations that we computed above.
+
+::: {.column-margin}
+Squared Deviation: ($x_i - \bar{x})^2$
+:::
+
+```{r}
+dataset1$`Squared Deviations` <- dataset1$Deviations^2
+dataset2$`Squared Deviations` <- dataset2$Deviations^2
+```
+
+::: {.panel-tabset}
+
+### Dataset 1
+
+```{r}
+knitr::kable(dataset1, align=c('c','c'))
+```
+
+### Dataset 2 {.active}
+
+```{r}
+knitr::kable(dataset2, align=c('c','c'))
+```
+
+:::
+
+In the above example, the squared deviation for the first observation is: $(x_i - \bar{x})^2 = (5 - 4.4)^2 = (0.6)^2 = 0.36$.
+
+For a single number that quantifies the variability of each dataset, we could then compute the **sum of squared deviations**, $\sum_{i=1}^n (x_i - \bar{x})^2$, by adding together all of the squared deviations for a sample. Sometimes this quantity is called **sum of squares (SS)** for short.
+
+::: {.column-margin}
+Sum of squares: $\sum_{i=1}^n (x_i - \bar{x})^2$
+
+$n$ is the sample size
+
+$\sum_{i=1}^n$ is summation notation
+:::
+
+For Dataset 2:
+
+\begin{align*}
+& \sum_{i=1}^n (x_i - \bar{x})^2 = 0.36 + 5.76 + 11.56 + 6.76 + 0.16\\
+& + 12.96 + 6.76 + 11.56 + 11.56 + 12.96 = 80.4
+\end{align*}
+
+
+<!--### Learning check-->
+
+- [Try computing the sum of squared deviations for Dataset 1. To see the values for Dataset 1, click on the "Dataset 1" tab of any of the above Tables. You can either start from the raw data (at the top) or the squared deviations (the most recent Table above).]{style="color: blue;"}
+
+<!-- requires quarto add coatless-quarto/details-->
+::: {.details summary="Click here to see the answer"}
+
+For dataset 1, we have:
+
+\begin{align*}
+\sum_{i=1}^n (x_i - \bar{x})^2 = & (6-4.4)^2 + (5-4.4)^2 + (3-4.4)^2 + (5-4.4)^2 + (6-4.4)^2 +\\
+& (4-4.4)^2 + (3-4.4)^2 + (4-4.4)^2 + (4-4.4)^2 + (4-4.4)^2\\
+= & (1.6)^2 + (0.6)^2 + (-1.4)^2 + (0.6)^2 + (1.6)^2 + (-0.4)^2 + (-1.4)^2 + (-0.4)^2 + (-0.4)^2 + (-0.4)^2\\
+= & 2.56 + 0.36 + 1.96 + 0.36 + 2.56 + 0.16 + 1.96 + 0.16 + 0.16 + 0.16\\
+= & 10.4
+\end{align*}
+:::
+
+- [Which dataset has a larger sum of squares?]{style="color: blue;"}
+
+::: {.details summary="Click here to see the answer"}
+Dataset 1 had 10.4 and dataset 2 had 80.4 for the sum of squares. Therefore, dataset 2 had the larger sum of squares.
+
+::: {.callout-warning}
+Be careful; we cannnot compare sum of squares for two datasets if the sample size for the datasets differs or if the outcome variable is measured differently.
+:::
+
+:::
+
+::: {.callout-note collapse="true"}
+## Why not just sum together deviations?
+
+Look at either of the Tables above that contain deviations. Note how some deviations are positive and some are negative. It turns out that if we just add up the deviations, it will always equal zero.
+
+Specifically, $\sum_{i=1}^n (x_i - \bar{x}) = 0$. This occurs regardless of the variability of any given dataset. So, summing deviations will not help us quantify variability.
+:::
+
+::: {.callout-note collapse="true"}
+## Why not take the absolute value of deviations?
+
+Suppose we can compute a deviation between a score and some value, $x_i-\tilde{x}$.
+
+We can then either square such deviations and sum them:
+
+\begin{align*}
+\sum_{i=1}^n (x_i-\tilde{x})^2
+\end{align*}
+
+Or take the absolute value and sum them:
+\begin{align*}
+\sum_{i=1}^n |x_i-\tilde{x}|
+\end{align*}
+
+It turns out that:
+
+- If we replace $\tilde{x}$ with the **sample mean**, it makes the sum of squared deviations as small as possible; no other number will make the sum of squared deviations as small.
+- If we replace $\tilde{x}$ with the **sample median**, it makes the sum of absolute deviations as small as possible; no other number will make the sum of absolute deviations as small.
+
+Squared deviations are not necessarily "better," but there are other historical reasons why squared deviations won out.
+
+One example: linear regression works by minimizing squared deviations. If we instead worked with absolute deviations, a unique solution for the intercept and slope is not guaranteed.
+
+:::
+
+## Variance and standard deviation
+
+The sum of squared deviations is usually not the preferred choice for quantifying variability. To see why, consider what happens to it as sample size changes:
+
+<!--
+- Sample plot
+- Compute sum of squares (value box? or on plot)
+- Sample size slider, with animation
+-->
+
+```{r}
+#| panel: fill
+plotOutput("plotss")
+sliderInput("SampleSize", "Sample size:",min=5,max=25,value=5,step=1)
+```
+
+```{r}
+#| context: server
+#library(plotly)
+output$plotss <- renderPlot({
+
+  set.seed(7234)
+  dat <- rnorm(25, 0, 5)
+  datdf <- data.frame(x = dat[1:5],
+                    SampleSize = rep(5, 5),
+                    SS = rep(sum((dat[1:5]-mean(dat[1:5]))^2), 5)
+  )
+  for(s in 6:25){
+    datdf <- rbind(datdf, data.frame(x=dat[1:s],
+                                   SampleSize = rep(s, s),
+                                   SS = rep(sum((dat[1:s]-mean(dat[1:s]))^2), s)
+                                   )
+                     )
+  }
+  
+  tmpdf <- datdf %>% filter(SampleSize == input$SampleSize)
+  SS <- tmpdf$SS[1]
+  plotss <- tmpdf %>%
+    ggplot(aes(x=x)) + 
+    geom_histogram(binwidth=1) +
+    ylim(0, 6) +
+    theme_classic(base_size = 20) +
+    annotate("text", x=0, y=4, label=paste0("Sum of Squares:", round(SS,2))) + 
+    annotate("text", x=0, y=5, label=paste0("Sample Size:", input$SampleSize)) +
+    xlim(-12,12)
+  # plotly version  
+  #for(s in 6:25){
+  #  datdf <- rbind(datdf, data.frame(x=dat[1:s],
+  #                               SampleSize = rep(s, s),
+  #                               SS = rep(sum((dat[1:s]-mean(dat[1:s]))^2), s)
+  #                               )
+  #                 )
+  #}
+  # plotss <- datdf %>% plot_ly(
+  #   x = ~x, 
+  #   type = "histogram",
+  #   autobinx = FALSE,
+  #   showlegend = FALSE,
+  #   xbins = list(start = -15, end = 15, size = 1),
+  #   marker = list(color = "steelblue", line = list(color = "white", width = 1))
+  # ) %>%
+  # add_text(x = 0, y = 5,
+  #   text = ~paste("SS:", SS),
+  #   showlegend = FALSE) %>%
+  # layout(
+  #   title = "Sum of squares across sample size",
+  #   xaxis = list(title = "x", range = c(-12, 12)),
+  #   yaxis = list(title = "Count", range = c(0, 6))
+  # )
+  # return(plotss)
+  
+  return(plotss)
+})
+
+
+```
+
+- [What happens to the sum of squares as sample size increases?]{style="color: blue;"}
+    a. It decreases.
+    b. It increases.
+    c. It stays about the same.
+    d. It's too unpredictable to say.
+
+::: {.details summary="Click here to see the answer"}
+(b). As sample size increases, the sum of squares increases. This makes the sum of squares difficult to use if we want to compare the variability of two different samples that may differ in sample size, or estimate the variability of a population from a sample. However, sum of squares will still be useful in the analysis of variance: as we will see later, it can be easily partitioned.
+:::
+
+To get around this issue, we can compute the **variance**, which is the average of the sum of squares. We denote as the variance as $\sigma^2$ when working with population data.
+
+$$ \sigma^2 = \frac{\sum_{i=1}^N (x_i -\mu)^2}{N}$$ Where $\mu$ represents the population mean, $N$ represents the population size, and $x_i$ represents a given data point.
+
+::: {.column-margin}
+Population variance: $\sigma^2$
+:::
+
+When working with samples, we change the denominator:
+
+$$ s^2 =  \frac{\sum_{i=1}^n (x_i -\bar{x})^2}{n-1}$$
+
+The $n-1$ is also known as the **degrees of freedom** for the sample variance. Computing it in this way ensures that $s^2$ is an unbiased estimate of the population variance, $\sigma^2$.
+
+::: {.column-margin}
+Sample variance (unbiased estimate of population variance): $s^2$
+
+Degrees of freedom: The denominator of a variance estimate, or the number of independent pieces of information used to compute the sample variance. It is $n-1$ here because we spent one to compute the sample mean. 
+:::
+
+For the dataset 2 example, the sample variance is:
+
+\begin{align*}
+s^2 =  \frac{\sum_{i=1}^n (x_i -\bar{x})^2}{n-1} = \frac{80.4}{10-1} \approx 8.933
+\end{align*}
+
+
+- [What is the variance of dataset 1?]{style="color: blue;"}
+
+::: {.details summary="Click here to see the answer"}
+\begin{align*}
+s^2 =  \frac{\sum_{i=1}^n (x_i -\bar{x})^2}{n-1} = \frac{10.4}{10-1} \approx 1.556
+\end{align*}
+:::
+
+
+
+
+Although the sample variance for dataset 2 is about 8.933 (there is some rounding we must do), this isn't very interpretable.
+
+Though we will often work with average squared deviations (i.e., variance), these can be sometimes be difficult to interpret in part because the units are not very intuitive.
+
+It is common to instead take the square root of the variance, known as the **standard deviation**, which results in a quantity that is conceptually in the same metric as the original variable.
+
+::: {.column-margin}
+Sample standard deviation: $s$
+:::
+
+<!--
+If we can take the square root of the variance, we can force it to be in the same metric as our data.
+
+We call this the *standard deviation*.-->
+
+$$s = \sqrt{s^2} = \sqrt{\frac{\sum_{i=1}^n (x_i -\bar{x})^2}{n-1}}$$
+For dataset 2, the standard deviation is:
+
+\begin{align*}
+s = \sqrt{s^2} = \sqrt{8.933} \approx 2.989
+\end{align*}
+
+- [What is the standard deviation of dataset 1?]{style="color: blue;"}
+
+::: {.details summary="Click here to see the answer"}
+\begin{align*}
+s = \sqrt{s^2} = \sqrt{1.556} \approx 1.247
+\end{align*}
+:::
+
+Standard deviations are often easier to work with if we want some sense of how far away a typical data point is from the mean. For example, if the variable was normally distributed, approximately 68% of the scores are within 1 standard deviation of the mean, and 95% of scores are within 2 standard deviations of the mean. Even without assuming the data are normal, scores that are 2 or 3 standard deviations away from the mean are often unusual compared to the other scores.
+
+Returning to dataset 2, and as an example, a score of $\bar{x} + 3\times s = 4.4 + 3\times2.989 =  13.367$ or greater would be quite unusual.
+
+# Part 2: One-way ANOVA
+
+In this section, we will consider how variance is partitioned in a one-way between-subjects analysis of variance (ANOVA).
+
+## Research question and null hypothesis
+
+A typical one-way between-subjects ANOVA begins by considering a categorical variable, sometimes called an **independent variable** or a **factor**, that gives rise to two or more groups, called **levels**.
+
+::: {.column-margin}
+Independent variable: A categorical variable, often called a factor or predictor variable, usually manipulated in experimental designs analyzed with ANOVA.
+
+Number of levels of the independent variable (or number of groups): $k$
+
+Dependent variable: The outcome variable of interest in ANOVA.
+
+:::
+
+Ideally, research subjects are randomly assigned to one of the groups (i.e., an experimental research design).
+<!--
+- Research subjects may be randomly sampled from the groups (correlational research design); or-->
+
+The research question typically concerns whether the groups differ on some quantitative outcome variable, sometimes called the **dependent variable**.
+
+Example:
+
+- Researchers are interested in studying types of study breaks and their effect on well-being.
+- 15 research subjects are randomly assigned to one of three groups: 1) A control group where subjects do nothing special; 2) A mindfulness group where research subjects spend 15 minutes of mindfulness training; 3) A light exercise group where subjects walk for 15 minutes.
+- After a week, well-being is measured via a survey for all research subjects and scored from 0 to 10.
+
+
+The **null hypothesis for the ANOVA** is that the means for well-being for the three groups are equal to each other in the population:
+
+$H_0: \mu_1 = \mu_2 = \mu_3$
+
+where $\mu_1$ is the population mean for group 1, for example.
+
+::: {.column-margin}
+Null hypothesis for ANOVA: $\mu_1 = \mu_2 = \cdots = \mu_k$. All group means are equal to each other.
+:::
+
+- [In this example, what is the independent variable and its levels?]{style="color: blue;"}
+
+::: {.details summary="Click here to see the answer"}
+In this example, "study break type" is the independent variable, and it has three levels: Control, mindfulness, and walking.
+:::
+
+- [In this example, what is the dependent variable?]{style="color: blue;"}
+
+::: {.details summary="Click here to see the answer"}
+In this example, well-being is the dependent variable. Note that the research question describes this variable as the outcome of interest, and it is measured from 0 to 10 (which is arguably quantitative given the good number of possible scores).
+:::
+
+- [Is the alternative hypothesis $H_1: \mu_1 \ne \mu_2 \ne \mu_3$?]{style="color: blue;"}
+
+::: {.details summary="Click here to see the answer"}
+It is better to say that not all of the population means are equal to each other under $H_1$.
+
+We do not need all three means to be different than each other under the alternative hypothesis, though this is a possibility. For example, it could be that only two means are different from each other: $\mu_1 = \mu_2 \ne \mu_3$ or $\mu_1 \ne \mu_2 = \mu_3$ or it could be only $\mu_1 \ne \mu_3 = \mu_2$.
+:::
+
+- [What would $H_0$ be if there were 5 levels (or 5 groups)?]{style="color: blue;"}
+
+::: {.details summary="Click here to see the answer"}
+$H_0: \mu_1 = \mu_2 = \mu_3 = \mu_4 = \mu_5$
+:::
+
+
+<!--
+## Variability
+
+Consider the following two datasets, each of which contains two groups.
+
+```{r}
+dataset3 <- data.frame(Group1 = c(3,7,3,7,3,7),Group2=c(7,3,7,3,7,3))
+dataset4 <- data.frame(Group1 = c(3,3,3,3,3,3),Group2=c(7,7,7,7,7,7))
+```
+
+::::: {layout="[0.5, 0.5]"}
+::: {.column width="100%"}
+```{r}
+dataset3
+paste0("Sum of Squares = 48")
+```
+:::
+
+::: {.column width="100%"}
+```{r}
+dataset4
+paste0("Sum of Squares = 48")
+```
+:::
+:::::
+
+The total variability (Sum of Squares) in these datasets are the same, yet they tell very different stories.
+-->
+
+<!--
+Both of these datasets have the same *grand mean*, or the average score if we ignore grouping.
+
+::::: {layout="[0.5, 0.5]"}
+::: {.column width="100%"}
+```{r}
+dataset3
+paste0("Grand Mean = (3 + 7 + 3 + .. + 3)/12 = 5")
+```
+:::
+
+::: {.column width="100%"}
+```{r}
+dataset4
+paste0("Grand Mean = (3 + 3 + 3 + .. + 7)/12 = 5")
+```
+:::
+:::::
+-->
+
+## Group means
+
+Continuing the example above, suppose we have well-being scores from 15 research subjects:
+
+```{r}
+datasets <- data.frame(
+  Control = c(4, 3, 5, 4, 5),
+  Mindfulness = c(4, 5, 6, 4, 6),
+  Walk = c(8, 7, 6, 5, 6)
+)
+knitr::kable(datasets, align=c('c','c','c'),
+             caption="Data for three groups")
+```
+
+Although we do not have the population data for these three groups, we can still learn about the population based on just this sample. The sample means for group 1 ($\bar{x}_1$), group 2 ($\bar{x}_2$), and group 3 ($\bar{x}_3$) are estimates of their population counterparts (i.e., $\mu_1$, $\mu_2$, and $\mu_3$).
+
+To compute the sample means, we apply the sample mean formula to the scores for each of the groups:
+
+```{r}
+knitr::kable(colMeans(datasets), caption="Group means", col.names=c("Group","Mean"))
+```
+
+For example, 
+
+\begin{align*}
+\bar{x}_1 = \frac{\sum_{i=1}^{n_1} x_{i1}}{n_1} = \frac{4 + 3 + 5 + 4 + 5}{5} = 4.2
+\end{align*}
+
+where $n_1$ is the sample size for group 1, and $x_{i1}$ is an individual observation for group 1.
+
+::: {.callout-tip collapse="true"}
+
+### Click here to see sample mean computations for the other groups
+
+\begin{align*}
+\bar{x}_2 = \frac{\sum_{i=1}^{n_2} x_{i2}}{n_2} = \frac{4 + 5 + 6 + 4 + 6}{5} = 5.0
+\end{align*}
+
+\begin{align*}
+\bar{x}_3 = \frac{\sum_{i=1}^{n_3} x_{i3}}{n_3} = \frac{8 + 7 + 6 + 5 + 6}{5} = 6.4
+\end{align*}
+
+:::
+
+Based on inspecting the means, it looks like there might be a difference in well-being scores. But, the number of research subjects is relatively small and people do tend to naturally vary in their well-being scores. How do we know whether the differences in sample means are just due to chance alone? Can we infer that the population means are different just by looking at these mean values from our sample?
+
+Not quite, but an ANOVA can help us answer these questions by partitioning variability due to different sources.
+
+## The Grand Mean & Total Variability
+
+To understand how variability is partitioned for ANOVA, first pretend that all of the observations are from the same population. In such a case, suppose we wish to compute central tendency (the mean) and variability (variance) for the well-being scores.
+
+The **grand mean** often uses the same notation for the sample mean, $\bar{x}$, and refers to the mean of the scores, ignoring grouping. <!-- That is, pretend all of the well-being scores are from the same group, and compute the mean of all of the scores.--> For this dataset, the grand mean is:
+
+\begin{align*}
+\bar{x} = (4 + 3 + 5 + 4 + 5 + 4 + 5 + 6 + 4 + 6 + 8 + 7 + 6 + 5 + 6) / 15 = 5.2
+\end{align*}
+
+::: {.column-margin}
+Grand mean ($\bar{x}$): The mean of all observations in a sample, ignoring the groups or levels of the independent variable.
+:::
+
+### Total variability
+
+Total variability of the scores can be quantified by **sum of squares total ($SS_T$)** in ANOVA.
+
+<!--
+On the way to computing the variance of all of the scores, we compute what is called-->
+
+\begin{align*}
+SS_T = \sum_{g=1}^ k\sum_{i=1}^{n_g} (x_{ig} - \bar{x})^2
+\end{align*}
+
+::: {.column-margin}
+Sum of squares total: $SS_T$
+:::
+
+Here, $x_{ig}$ is notation for wellbeing score $i$ in group $g$, and $k$ is the total number of groups (in this example, $k=3$). Although this equation has extra notation and double-summation, it is the same as computing the sum of squares we would obtain if we ignored the groups.
+
+Note that $x_{ig} - \bar{x}$ is the deviation between an individual observation and the grand mean. Visually, these deviations are denoted by the dotted lines in the following plot:
+
+```{R}
+library(RColorBrewer)
+library(tidyverse)
+
+# convert to format for ggplot2
+datasets_long <- datasets %>% pivot_longer(cols=c("Control","Mindfulness","Walk"), names_to="group")
+
+dat <- datasets_long
+
+grand_mean <- mean(dat$value)
+group_means <- colMeans(datasets)
+dat <- dat %>% group_by(group) %>% mutate(GroupMean = mean(value)) %>% ungroup()
+# for within-group deviations
+dat<- dat %>% mutate(start_val = recode(GroupMean, `4.2` = 0.5, `5` = 1.5, `6.4` = 2.5),
+               end_val = recode(GroupMean, `4.2` = 1.5, `5` = 2.5, `6.4` = 3.5))
+# for between-group deviations
+dat<- dat %>% mutate(bwx = recode(GroupMean, `4.2` = 1, `5` = 2, `6.4` = 3))
+
+# jitter so that points don't overlap
+pos <- position_jitter(width = 0.25, height = 0, seed = 123)
+
+ggplot(dat, aes(x = factor(group), y = value, color = factor(group))) +
+  
+  # points
+  geom_point(position = pos, size = 3) +
+
+  # grand mean + label for grand mean
+  geom_hline(yintercept = grand_mean, color = "red", linewidth = 1) +
+  annotate("text", x = 1.5, y = 7, label = "bar(x)", 
+           parse = TRUE, size = 8, color = "black") + 
+  annotate("segment", x = 1.5, y = 6.75, xend = 1.6, yend = grand_mean + 0.1, 
+           arrow = arrow(length = unit(0.3, "cm")),
+           linewidth = 1, color = "black") +
+
+  # deviations; xend used to keep consistent with jitter
+  geom_segment(aes(xend = factor(group), yend = grand_mean), 
+               position = pos, 
+               linetype = "dotted", 
+               linewidth = 0.8) +
+  
+  scale_color_brewer(palette = "Dark2", name = "Group") +
+  labs(y = "Well-being", x = "Group", title = "Sum of squares total (SST)") +
+  theme_minimal(base_size = 15)
+
+```
+
+For this dataset, $SS_T = 24.4$, and recall that $\bar{x} = 5.2$.
+
+- [Can you show how to compute $SS_T$ for this dataset?]{style="color: blue;"}
+
+:::{.details summary="Click here to see the computations"}
+
+\begin{align*}
+SS_T = & (4-5.2)^2 + (3-5.2)^2 + (5-5.2)^2 + (4-5.2)^2 + (5-5.2)^2 +\\
+& (4-5.2)^2 + (5-5.2)^2 + (6-5.2)^2 + (4-5.2)^2 + (6-5.2)^2 +\\
+& (8-5.2)^2 + (7-5.2)^2 + (6-5.2)^2 + (5-5.2)^2 + (6-5.2)^2 +\\
+= & (-1.2)^2 + (-2.2)^2 + (-0.2)^2 + (-1.2)^2 + (-0.2)^2 + \\
+& (-1.2)^2 + (-0.2)^2 + (0.8)^2 + (-1.2)^2 + (0.8)^2 + \\
+& (2.8)^2 + (1.8)^2 + (0.8)^2 + (-0.2)^2 + (0.8)^2 + \\
+= & 1.44 + 4.84 + 0.04 + 1.44 + 0.04 +\\
+& 1.44 + 0.04 + 0.64 + 1.44 + 0.64 +\\
+& 7.84 + 3.24 + 0.64 + 0.04 + 0.64\\
+ = & 24.4
+\end{align*}
+:::
+
+***The sum of squares total represents total variability of the dependent variable and is what is partitioned in ANOVA***.
+
+## Partitioning of total variability
+
+In a one-way between-subjects ANOVA, total variability ($SS_T$) is partitioned into two parts:
+
+\begin{align*}
+SS_T = SS_B + SS_W
+\end{align*}
+
+- $SS_B$ is between-group variability or **sum of squares between**, sometimes denoted as the model sum of squares, or $SS_M$
+- $SS_W$ is within-group variability **sum of squares within**, sometimes denoted the residual sum of squares, or $SS_R$
+
+::: {.column-margin}
+Sum of squares between: $SS_B$
+
+Sum of squares within: $SS_W$
+:::
+
+These two sources of variance map onto reasons why the scores for the dependent variable may differ:
+
+- If scores differ because the groups have different means (e.g., due to the independent variable having an effect), this is captured by $SS_B$
+- If scores differ simply because research subjects naturally tend to be different from each other (even if they belong to the same group), this is captured by $SS_W$
+
+### Sum of squares between
+
+To compute the variability of group means, we consider deviations between each group mean and the grand mean, $\bar{x}_g - \bar{x}$. Sum of squares between, $SS_B$, is computed in this way, except the deviations are squared and weighted by sample size:
+
+\begin{align*}
+SS_B = \sum_{g=1}^k n_g(\bar{x}_g - \bar{x})^2
+\end{align*}
+
+To visualize, consider that for this example there are three deviations for each of the three group means:
+
+```{r}
+ggplot(dat, aes(x = factor(group), y = value, color = factor(group))) +
+  
+  # points
+  geom_point(position = pos, size = 3) +
+
+  # grand mean + label
+  geom_hline(yintercept = grand_mean, color = "red", linewidth = 1) +
+  annotate("text", x = 1.5, y = 7, label = "bar(x)", 
+           parse = TRUE, size = 8, color = "black") + 
+  annotate("segment", x = 1.5, y = 6.75, xend = 1.6, yend = grand_mean + 0.1, 
+           arrow = arrow(length = unit(0.3, "cm")),
+           linewidth = 1, color = "black") +
+  
+  # group means + label
+  geom_segment(aes(x=start_val, xend = end_val, y=GroupMean, yend=GroupMean))+
+  annotate("text", x = 0.75, y = 5, label = "bar(x)[1]", 
+           parse = TRUE, size = 8, color = "black") + 
+  annotate("segment", x = 0.75, y = 4.75, xend = 0.85, yend = group_means[1] + 0.1, 
+           arrow = arrow(length = unit(0.3, "cm")),
+           linewidth = 1, color = "black") +
+  annotate("text", x = 1.75, y = 4, label = "bar(x)[2]", 
+           parse = TRUE, size = 8, color = "black") + 
+  annotate("segment", x = 1.75, y = 4.25, xend = 1.85, yend = group_means[2] -0.1, 
+           arrow = arrow(length = unit(0.3, "cm")),
+           linewidth = 1, color = "black") +
+  annotate("text", x = 2.5, y = 7.5, label = "bar(x)[3]", 
+           parse = TRUE, size = 8, color = "black") + 
+  annotate("segment", x = 2.5, y = 7.25, xend = 2.6, yend = group_means[3] + .01, 
+           arrow = arrow(length = unit(0.3, "cm")),
+           linewidth = 1, color = "black") +
+  
+  # deviations
+  geom_segment(aes(xend = factor(group), y = GroupMean, yend = grand_mean), 
+               linetype = "dotted", 
+               linewidth = 1) +
+  
+  scale_color_brewer(palette = "Dark2", name = "Group") +
+  labs(y = "Well-being", x = "Group", title = "Sum of squares between (SSB)") +
+  theme_minimal(base_size = 15)
+```
+
+What happens to the scores if the between-group variability were to be decreased or increased? Try the slider for the following plot to find out.
+
+```{r}
+plotOutput("ssbplot")
+sliderInput("ssbscale", "Sum of squares between:",min=0,max=75,value=12.4,step=.2)
+```
+
+```{r}
+#| context: server
+library(tidyverse)
+output$ssbplot <- renderPlot({
+  
+  # set up dataset as before
+  datasets <- data.frame(
+    Control = c(4, 3, 5, 4, 5),
+    Mindfulness = c(4, 5, 6, 4, 6),
+    Walk = c(8, 7, 6, 5, 6)
+  )
+
+  datasets_long <- datasets %>% pivot_longer(cols=c("Control","Mindfulness","Walk"), names_to="group")
+  
+  dat <- datasets_long
+  
+  grand_mean <- mean(dat$value)
+  group_means <- colMeans(datasets)
+  dat <- dat %>% group_by(group) %>% mutate(GroupMean = mean(value)) %>% ungroup()
+  # for within-group deviations
+  dat<- dat %>% mutate(start_val = recode(GroupMean, `4.2` = 0.5, `5` = 1.5, `6.4` = 2.5),
+                 end_val = recode(GroupMean, `4.2` = 1.5, `5` = 2.5, `6.4` = 3.5))
+  # for between-group deviations
+  dat<- dat %>% mutate(bwx = recode(GroupMean, `4.2` = 1, `5` = 2, `6.4` = 3))
+  
+  # jitter so that points don't overlap
+  pos <- position_jitter(width = 0.25, height = 0, seed = 123)
+  
+  # now, rescale due to slider
+  new_sdg <- sqrt((input$ssbscale/2) / 5) # 5 is sample size per group; 2 is df
+  new_group_means <- new_sdg*scale(group_means) + grand_mean
+  mean_diff <- group_means - new_group_means
+  dat <- merge(dat, data.frame(group = c("Control","Mindfulness","Walk"),
+             new_group_mean = new_group_means))
+  dat <- dat %>% mutate(mean_diff = GroupMean - new_group_mean,
+                        newvalue = value - (GroupMean - new_group_mean))
+  dat$value <- dat$newvalue
+  dat$GroupMean <- dat$new_group_mean
+
+  ssbplot <- ggplot(dat, aes(x = factor(group), y = value, color = factor(group))) +
+  
+    # points
+    geom_point(position = pos, size = 3) +
+  
+    # grand mean
+    geom_hline(yintercept = grand_mean, color = "red", linewidth = 1) +
+
+    # group means
+    geom_segment(aes(x=start_val, xend = end_val, y=GroupMean, yend=GroupMean))+
+
+    # deviations
+    geom_segment(aes(xend = factor(group), y = GroupMean, yend = grand_mean), 
+                 linetype = "dotted", 
+                 linewidth = 1) +
+    
+    scale_color_brewer(palette = "Dark2", name = "Group") +
+    labs(y = "Well-being", x = "Group", title = "Sum of squares between (SSB)") +
+    theme_minimal(base_size = 15) + 
+    ylim(1,10)
+  
+  return(ssbplot)
+})
+
+```
+
+- [As $SS_B$ increases, what happens to deviations between the group means and the grand mean?]{style="color: blue;"}
+    a. Deviations between the group means and the grand mean stay about the same.
+    b. Deviations between the group means and the grand mean become smaller.
+    c. Deviations between the group means and the grand mean become larger.
+    d. Deviations between the group means and the grand mean are unpredictable.    
+
+:::{.details summary = "Click here to see the answer"}
+
+(c) Deviations between the group means and the grand mean become larger. Note how when the slider is moved to the right, $SS_B$ is larger and so are the dotted lines between each group's mean and the grand mean.
+
+:::
+
+### Sum of squares within
+
+To compute the variance within groups, we consider deviations between each observation and the mean of the group to which it belongs, $x_{ig} - \bar{x}_g$. Sum of squares within, $SS_W$, is computed in this way; deviations are squared and added up:
+
+\begin{align*}
+SS_W = \sum_{g=1}^k \sum_{i=1}^{n_g} (x_{ig} - \bar{x}_g)^2
+\end{align*}
+
+Again, although there is double-summation and extra notation, this is no different than computing the sum of squares within each group and then adding them together:
+
+\begin{align*}
+SS_W = \sum_{g=1}^k SS_g
+\end{align*}
+
+To visualize, consider the deviations between each score and its group mean:
+
+```{r}
+ggplot(dat, aes(x = factor(group), y = value, color = factor(group))) +
+  
+  # points
+  geom_point(position = pos, size = 3) +
+
+  # group means + label
+  geom_segment(aes(x=start_val, xend = end_val, y=GroupMean, yend=GroupMean))+
+  annotate("text", x = 0.75, y = 5, label = "bar(x)[1]", 
+           parse = TRUE, size = 8, color = "black") + 
+  annotate("segment", x = 0.75, y = 4.75, xend = 0.85, yend = group_means[1] + 0.1, 
+           arrow = arrow(length = unit(0.3, "cm")),
+           linewidth = 1, color = "black") +
+  annotate("text", x = 1.75, y = 4, label = "bar(x)[2]", 
+           parse = TRUE, size = 8, color = "black") + 
+  annotate("segment", x = 1.75, y = 4.25, xend = 1.85, yend = group_means[2] -0.1, 
+           arrow = arrow(length = unit(0.3, "cm")),
+           linewidth = 1, color = "black") +
+  annotate("text", x = 2.5, y = 7.5, label = "bar(x)[3]", 
+           parse = TRUE, size = 8, color = "black") + 
+  annotate("segment", x = 2.5, y = 7.25, xend = 2.6, yend = group_means[3] + .01, 
+           arrow = arrow(length = unit(0.3, "cm")),
+           linewidth = 1, color = "black") +
+  
+  # deviations; xend used to keep consistent with jitter
+  geom_segment(aes(xend = factor(group), yend = GroupMean), 
+               position = pos, 
+               linetype = "dotted", 
+               linewidth = 0.8) +
+  
+  scale_color_brewer(palette = "Dark2", name = "Group") +
+  labs(y = "Well-being", x = "Group", title = "Sum of squares within (SSW)") +
+  theme_minimal(base_size = 15)
+```
+
+What happens to the scores if the within-group variability were to be increased or decreased? Try the slider for the following plot to find out.
+
+```{r}
+plotOutput("sswplot")
+sliderInput("sswscale", "Sum of squares within:",min=0.2,max=50,value=11.9,step=.2)
+```
+
+```{r}
+#| context: server
+
+library(tidyverse)
+output$sswplot <- renderPlot({
+  
+  # set up dataset as before
+  datasets <- data.frame(
+    Control = c(4, 3, 5, 4, 5),
+    Mindfulness = c(4, 5, 6, 4, 6),
+    Walk = c(8, 7, 6, 5, 6)
+  )
+
+  datasets_long <- datasets %>% pivot_longer(cols=c("Control","Mindfulness","Walk"), names_to="group")
+  
+  dat <- datasets_long
+  
+  grand_mean <- mean(dat$value)
+  group_means <- colMeans(datasets)
+  dat <- dat %>% group_by(group) %>% mutate(GroupMean = mean(value)) %>% ungroup()
+  # for within-group deviations
+  dat<- dat %>% mutate(start_val = recode(GroupMean, `4.2` = 0.5, `5` = 1.5, `6.4` = 2.5),
+                 end_val = recode(GroupMean, `4.2` = 1.5, `5` = 2.5, `6.4` = 3.5))
+  # for between-group deviations
+  dat<- dat %>% mutate(bwx = recode(GroupMean, `4.2` = 1, `5` = 2, `6.4` = 3))
+  
+  # jitter so that points don't overlap
+  pos <- position_jitter(width = 0.25, height = 0, seed = 123)
+  
+  # now, rescale due to slider
+  ssw <- dat %>% group_by(group) %>% summarise(ss = sd(value)*4) %>% summarise(ssw = sum(ss))
+  # ratio of ssw to new ssw
+  newssw <- input$sswscale
+  const <- as.numeric(newssw/ssw)
+  # rescale w/in each group
+  dat <- dat %>% group_by(group) %>%
+    mutate(z = (value - GroupMean)/sd(value),
+           sd = sd(value)) %>%
+    mutate(newvalue = sqrt(const)*sd*z + GroupMean)
+
+  sswplot <- ggplot(dat, aes(x = factor(group), y = newvalue, color = factor(group))) +
+    
+    # points
+    geom_point(position = pos, size = 3) +
+  
+    # group means + label
+    geom_segment(aes(x=start_val, xend = end_val, y=GroupMean, yend=GroupMean))+
+    annotate("text", x = 0.75, y = 5, label = "bar(x)[1]", 
+             parse = TRUE, size = 8, color = "black") + 
+    annotate("segment", x = 0.75, y = 4.75, xend = 0.85, yend = group_means[1] + 0.1, 
+             arrow = arrow(length = unit(0.3, "cm")),
+             linewidth = 1, color = "black") +
+    annotate("text", x = 1.75, y = 4, label = "bar(x)[2]", 
+             parse = TRUE, size = 8, color = "black") + 
+    annotate("segment", x = 1.75, y = 4.25, xend = 1.85, yend = group_means[2] -0.1, 
+             arrow = arrow(length = unit(0.3, "cm")),
+             linewidth = 1, color = "black") +
+    annotate("text", x = 2.5, y = 7.5, label = "bar(x)[3]", 
+             parse = TRUE, size = 8, color = "black") + 
+    annotate("segment", x = 2.5, y = 7.25, xend = 2.6, yend = group_means[3] + .01, 
+             arrow = arrow(length = unit(0.3, "cm")),
+             linewidth = 1, color = "black") +
+    
+    # deviations; xend used to keep consistent with jitter
+    geom_segment(aes(xend = factor(group), yend = GroupMean), 
+                 position = pos, 
+                 linetype = "dotted", 
+                 linewidth = 0.8) +
+    
+    scale_color_brewer(palette = "Dark2", name = "Group") +
+    labs(y = "Well-being", x = "Group", title = "Sum of squares within (SSW)") +
+    theme_minimal(base_size = 15) + 
+    ylim(1, 10)
+  
+  return(sswplot)
+})
+```
+
+- [As $SS_W$ increases, what happens to deviations between the scores and their respective group means?]{style="color: blue;"}
+    a. Deviations between the scores and the group means stay about the same.
+    b. Deviations between the scores and the group means become smaller.
+    c. Deviations between the scores and the group means become larger.
+    d. Deviations between the scores and the group means are unpredictable.    
+
+:::{.details summary = "Click here to see the answer"}
+
+(c) Deviations between the scores and the group means become larger. Note how when the slider is moved to the right, $SS_W$ is larger and so are the dotted lines between each score and their group's mean. But, the group means do not change.
+
+:::
+
+::: {.callout-note collapse="true"}
+## From a research methods perspective, what do you think affects $SS_B$?
+
+Since $SS_B$ is computed by looking at variability *between* group means, it represents variability in the dependent variable that may be due to the experimental manipulation. If the experimental manipulation is not strong enough to induce large group differences, $SS_B$ may be smaller as a result. The strength of experimental manipulation is easier to think about if the independent variable were something like drug dosage. Three levels could be close together (e.g., 0 mg, 5 mg, 10 mg) or farther apart (0 mg, 10 mg, 20 mg). In our example, the researcher may see larger (or smaller) effects of the study break type by: changing the frequency of breaks, increasing the amount of time for each break, or studying the effect over a longer period of time.
+
+:::
+
+::: {.callout-note collapse="true"}
+## From a research methods perspective, what do you think affects $SS_W$?
+
+Since $SS_W$ is computed by looking at variability *within* each group, it represents natural variability in how the research subjects tend to differ from one another. But, it can also be inflated by sources of noise that are unwanted. For example, if *all* research subjects go through a standardized procedure for an experiment, this may reduce $SS_W$. If instead multiple research assistants are responsible for guiding research subjects through an experiment and there is no set script or instructions, this may increase $SS_W$.
+
+:::
+
+<!--
+## Total variability
+
+We can calculate the total variability in the dataset as the sum of squared deviations from the grand mean.
+-->
+<!--
+```{r}
+dataset3_reorganized <- data.frame(data = c(3,7,3,7,3,7,7,3,7,3,7,3))
+dataset3_reorganized$Deviations <- dataset3_reorganized$data - mean(dataset3_reorganized$data)
+dataset3_reorganized$`Squared Deviations` <- dataset3_reorganized$Deviations^2
+
+dataset3_reorganized
+paste0("Total Variability (Total Sum of Squares): ",sum(dataset3_reorganized$`Squared Deviations`))
+```
+-->
+
+<!--
+## Between- and Within-Group Variability {.smaller}
+
+In a multiple-group dataset, we can divide the Total Variability into *between-group* and *within-group* components.
+
+In dataset 1, all of our variability is *within-group*; in dataset 2, all of our variability is *between-group*
+
+::::: {layout="[0.5, 0.5]"}
+::: {.column width="100%"}
+```{r}
+dataset3
+paste0("Total Variability (Total Sum of Squares): ",sum(dataset3_reorganized$`Squared Deviations`))
+paste0("Grand Mean = 5")
+paste0("Group 1 Mean = 5")
+paste0("Group 2 Mean = 5")
+paste0("Group 1 SD = 2.19")
+paste0("Group 2 SD = 2.19")
+```
+:::
+
+::: {.column width="100%"}
+```{r}
+dataset4_reorganized <- data.frame(data = c(3,3,3,3,3,3,7,7,7,7,7,7))
+dataset4_reorganized$Deviations <- dataset3_reorganized$data - mean(dataset3_reorganized$data)
+dataset4_reorganized$`Squared Deviations` <- dataset3_reorganized$Deviations^2
+
+dataset4
+paste0("Total Variability (Total Sum of Squares): ",sum(dataset4_reorganized$`Squared Deviations`))
+paste0("Grand Mean = 5")
+paste0("Group 1 Mean = 3")
+paste0("Group 2 Mean = 7")
+paste0("Group 1 SD = 0")
+paste0("Group 2 SD = 0")
+```
+:::
+:::::
+
+## Between- and Within-Group Variability
+
+Most datasets will have a mix of between-group and within-group variability.
+
+```{r}
+dataset5 <- data.frame(Group1 = c(8,4,3,7,4,1),Group2=c(1,7,4,3,4,2))
+dataset5
+```
+
+## Within-Group Variability
+
+*Within-group variability* refers to the sum of squared deviations between each score and the mean of its group.
+
+Here, the mean of group 1 is 4.5, and the mean of group 2 is 5.5. For each group, we calculate a sum of squares.
+
+::::: {layout="[0.5, 0.5]"}
+::: {.column width="100%"}
+```{r}
+dataset5_Group1 <- data.frame(Group1 = c(8,4,3,7,4,1))
+dataset5_Group1$Deviations <- dataset5_Group1$Group1 - mean(dataset5_Group1$Group1)
+dataset5_Group1$`Squared Deviations` <- dataset5_Group1$Deviations^2 
+dataset5_Group1
+```
+:::
+
+::: {.column width="100%"}
+```{r}
+dataset5_Group2 <- data.frame(Group2 = c(1,7,4,3,4,2)) 
+dataset5_Group2$Deviations <- dataset5_Group2$Group2 - mean(dataset5_Group2$Group2)
+dataset5_Group2$`Squared Deviations` <- dataset5_Group2$Deviations^2 
+dataset5_Group2
+```
+:::
+:::::
+
+If we sum the squared deviations from both group, we get:
+
+$$SS_{Within} = \sum(x_i - \bar{x_g})^2 = \sum(12.25 + .025 + ... + 2.25) = 55 $$
+
+## Between-group variability
+
+The flipside of within-group variability is *between-group* variability, representing how much the means of the two groups differ from the grand mean (accounting for group size).
+
+```{r}
+library(tidyr)
+dataset_5_long <- dataset5 %>% pivot_longer(cols=c("Group1","Group2"),names_to="Group")
+ggplot(data=dataset_5_long, aes(x=value, fill=Group)) +
+                  geom_dotplot(position="dodge") +
+  scale_y_continuous(name = "", breaks = NULL) +
+  #annotate("text",x=4.5,y=1,label=paste0("Mean = ",mean(dataset1$x)), vjust = 1, hjust = 0, colour="red") +
+  xlab("Dataset 2") + 
+  geom_vline(xintercept=4.5, colour="#FF61CC") +
+  geom_vline(xintercept=5.5,colour="#00BFC4") +
+  geom_vline(xintercept=5) +
+  #geom_segment(aes(x=4.4,xend=5,y=.2,yend=.2), colour="red") +
+  #geom_segment(aes(x=5,xend=5,y=.2,yend=0), colour="red") +
+  annotate("text",x=5,y=.3,label=paste0("The grand mean for both groups combined is 5"), vjust = 1, hjust = 0) +
+  annotate("text",x=4.5,y=.4,label=paste0("The mean of group 1 is 4.5"), vjust = 1, hjust = 0) +
+  annotate("text",x=5.5,y=.5,label=paste0("The mean of group 2 is 5.5"), vjust = 1, hjust = 0) +
+  theme_classic()
+```
+
+## Between-group variability
+
+```{r}
+library(tidyr)
+dataset_5_long <- dataset5 %>% pivot_longer(cols=c("Group1","Group2"),names_to="Group")
+ggplot(data=dataset_5_long, aes(x=value, fill=Group)) +
+                  geom_dotplot(position="dodge") +
+  scale_y_continuous(name = "", breaks = NULL) +
+  #annotate("text",x=4.5,y=1,label=paste0("Mean = ",mean(dataset1$x)), vjust = 1, hjust = 0, colour="red") +
+  xlab("Dataset 2") + 
+  geom_vline(xintercept=4.5, colour="#FF61CC") +
+  geom_vline(xintercept=5.5,colour="#00BFC4") +
+  geom_vline(xintercept=5) +
+  geom_segment(aes(x=4.5,xend=5,y=.2,yend=.2), colour="red") +
+  geom_segment(aes(x=5,xend=5.5,y=.4,yend=.4), colour="red") +
+  #annotate("text",x=5,y=.3,label=paste0("The grand mean for both groups combined is 5"), vjust = 1, hjust = 0) +
+  annotate("text",x=4.5,y=.4,label=paste0("The mean of group 1  (4.5) is .5 units less  \n than the grand mean (5)"), vjust = 1, hjust = 0) +
+  annotate("text",x=5.5,y=.5,label=paste0("The mean of group 2 is 5.5 is .5 units more \n than the grand mean (5)"), vjust = 1, hjust = 0) +
+  theme_classic()
+```
+
+## Between-group variability
+
+We can calculate it by squaring the difference between each group mean and the grand mean, and multiplying it by the group's sample size.
+
+$$SS_{Between} = \sum n_g(x_{g}-\bar{x})^2 = 6*(3.5-4)^2 + 6*(4.5 -4)^2 = 3 $$
+-->
+
+## Basic one-way ANOVA table
+
+The between- and within-group variability form the first components of a basic one-way ANOVA table, a way to summarize variability of multi-group datasets. The basic table looks like the following, and will be completed for this example shortly.
+
+| Source  | SS  | df  | MS  | F   | p   |
+|---------|-----|-----|-----|-----|-----|
+| Between | $SS_B$ | $df_B$  | $MS_B$  | $F$-ratio | $p$-value |
+| Within  | $SS_W$| $df_W$  | $MS_W$  |     |     |
+| Total   | $SS_T$| $df_T$  |     |     |     |
+
+: Basic one-way ANOVA table showing quantities to be filled in
+
+In what follows, we will complete this table in order to have a principled way of comparing between- and within-group variability, and ultimately testing the null hypothesis, $H_0: \mu_1 = \mu_2 =  \mu_3$, to answer the research question regarding whether the type of study break has an effect on well-being.
+
+
+In the three-group example considered at the start of this section, $SS_B = 12.4$ and $SS_W = 12.0$.
+
+Recall that sum of squares here are additive: $SS_T = SS_B + SS_W = 12.4 + 12.0 = 24.4$.
+
+We can fill in these elements on the Table:
+
+| Source  | SS  | df  | MS  | F   | p   |
+|---------|-----|-----|-----|-----|-----|
+| Between | 12.4| \-  | \-  | \-  | \-  |
+| Within  | 12.0| \-  | \-  |     |     |
+| Total   | 24.4| \-  |     |     |     |
+
+: The beginning of the one-way ANOVA table
+
+- [Can you show how $SS_W$ and $SS_B$ are computed for this dataset?]{style="color: blue;"}
+
+:::{.details summary = "Click here to see answer"}
+
+$\bar{x}_1 = 4.2$
+
+$\bar{x}_2 = 5$
+
+$\bar{x}_3 = 6.4$
+
+$\bar{x} = 5.2$
+
+$n_g = 5$
+
+\begin{align*}
+SS_B = & \sum^k_{g=1}n_g(\bar{x}_{g}-\bar{x})^2\\
+ = & 5(4.2-5.2)^2 + 5(5-5.2)^2 + 5(6.4-5.2)^2 = 12.4
+\end{align*}
+
+\begin{align*}
+SS_W = & \sum^k_{g=1}\sum^{n_g}(x_{ig}-\bar{x}_g)^2 = \\
+= & (4-4.2)^2 + (3-4.2)^2 + (5-4.2)^2 + (4-4.2)^2 + (5-4.2)^2 +\\
+& (4-5)^2 + (5-5)^2 + (6-5)^2 + (4-5)^2 + (6-5)^2 + \\
+& (8-6.4)^2 + (7-6.4)^2 + (6-6.4)^2 + (5-6.4)^2 + (6-6.4)^2\\
+= & 12
+\end{align*}
+
+:::
+
+### Degrees of freedom and mean squares
+
+$SS_B$ and $SS_W$, as measures of between-group and within-group variability, have the same issue as the sum of squares: the values of each will simply increase as the number of groups or sample size increases. We instead convert each into variance estimates.
+
+Variance estimates often have the form:
+
+\begin{align*}
+\text{Variance} = \frac{\text{Sum of squares}}{\text{Degrees of freedom}}
+\end{align*}
+
+Like with the sum of squares, we can divide the variability by their corresponding *degrees of freedom*.
+
+In general,
+
+**Between-group degrees of freedom**
+
+\begin{align*}
+df_B = k-1
+\end{align*}
+
+**Within-group degrees of freedom**
+
+\begin{align*}
+df_W = n-k
+\end{align*}
+Recall that $n$ is the total sample size and $k$ is the number of groups.
+
+::: {.column-margin}
+Between-group degrees of freedom: $df_B$
+
+Within-group degrees of freedom: $df_W$
+:::
+
+For this example,
+
+- $df_B = 3-1 = 2$
+- $df_W = 15-3 = 12$
+
+which we can fill in on the following table:
+
+| Source  | SS  | df  | MS  | F   | p   |
+|---------|-----|-----|-----|-----|-----|
+| Between | 12.4  | 2   | \-  | \-  | \-  |
+| Within  | 12.0  | 12  | \-  |     |     |
+| Total   | 24.4 | 14  |     |     |     |
+
+Note also that $df_T$, or degrees of freedom for the total, is the same that we would obtain if we were to compute the variance of all of the scores, ignoring groups, $n-1$, which in this case is $15 -1 = 14$.
+
+Note also that $df$ are additive: $df_T = df_B + df_W$.
+
+- [Hypothetically, if there were 4 groups and 20 subjects in each group, what would be the values of $df_B$ and $df_W$?]{style="color: blue;"}
+
+:::{.details summary = "Click here to see answer"}
+Number of groups ($k$) = $4$
+Number of subjects ($n$) = $4 \times 20 = 80$
+
+$$df_B = k-1 = 4 - 1 = 3$$
+$$df_W = n-k = 80 - 4 = 76$$
+:::
+
+<!--
+When we calculate (sample) variance, we divide our total variability by N-1 .-->
+
+<!--
+When we partition variability, we analogously divide our variability by our degrees of freedom; we call the result *Mean Square* values.-->
+
+Next, we analogously divide between- and within-group variability by their corresponding degrees of freedom. The result are two variance estimates called **mean squares between ($MS_B$)** and **mean squares within ($MS_W$)**.
+
+\begin{align*}
+MS_B = \frac{SS_B}{df_B}
+\end{align*}
+
+\begin{align*}
+MS_W = \frac{SS_W}{df_W}
+\end{align*}
+
+::: {.column-margin}
+Mean squares between: $MS_B$
+
+Mean squares within: $MS_W$
+:::
+
+| Source  | SS  | df  | MS  | F   | p   |
+|---------|-----|-----|-----|-----|-----|
+| Between | 12.4  | 2   | 6.2  | \-  | \-  |
+| Within  | 12.0  | 12  | 1.0  |     |     |
+| Total   | 24.4 | 14  |     |     |     |
+
+- [Can you show the computations for $MS_B$ and $MS_W$?]{style="color: blue;"}
+
+:::{.details summary="Click here to see answer"}
+
+$$MS_B = \frac{SS_B}{df_B} = \frac{12.4}{2} = 6.2$$
+
+$$MS_W =\frac{SS_W}{df_W} = \frac{12}{1} = 12$$
+
+:::
+
+### F Ratio
+
+Finally, we can compare these two variance estimates.
+
+The **F-Ratio** is the ratio of $MS_B$ to $MS_W$:
+
+\begin{align*}
+F = \frac{MS_{B}}{MS_{W}}
+\end{align*}
+
+::: {.column-margin}
+$F$-ratio: $F = \frac{MS_B}{MS_W}$. Also called an $F$-statistic. The ratio of $MS_B$ to $MS_W$.
+
+:::
+
+For this example,
+
+- $F = \frac{6.2}{1} = 6.2$
+
+| Source  | SS  | df  | MS  | F   | p   |
+|---------|-----|-----|-----|-----|-----|
+| Between | 12.4  | 2   | 6.2  | 6.2  | \-  |
+| Within  | 12.0  | 12  | 1.0  |     |     |
+| Total   | 24.4 | 14  |     |     |     |
+
+The $F$-ratio, or $F$-statistic, can now be used for hypothesis-testing, just like a $z$ or $t$-statistic that you may have already learned about in other contexts.
+
+There are both conceptual ways to think about the $F$-ratio as well as a slightly more precise way.
+
+First, consider the conceptual explanation:
+
+- If the null hypothesis were true, $H_0: \mu_1 = \mu_2 = \mu_3$, both $MS_W$ and $MS_B$ would be estimates of the same variance
+- If the null hypothesis is false and $MS_B$ tells us about between-group variability, we might expect it to be large relative to $MS_W$
+- Therefore, large $F$ ratios may be indicative of the null hypothesis being false
+
+While this conceptual explanation often works---it is true that larger $F$-ratios are more indicative of rejection of $H_0$---be careful not to fall for the myth that the $F$-ratio must be greater than 1 in order to reject $H_0$.
+
+:::{.callout-warning collapse="true"}
+### The F > 1 myth
+
+Popular textbooks in the social sciences sometimes give the impression that $F>1$ is required in order to reject $H_0$. To the lay person the logic sounds attractive: If $MS_B$ and $MS_W$ both estimate the same variance under $H_0$, and if $MS_B$ will be larger under the alternative, then the requirement that $F>1$ makes intuitive sense; a ratio of 1 would seem as though $H_0$ holds true. But at this point, the reader needs to understand that this rule is not true, and it is technically possible to reject $H_0$ even if $F < 1$. It is just that the degrees of freedom and $\alpha$ combinations required to see this are rarely used in practice. The explanation may require too much of a technical tangent at this point and is not necessary for the learning outcomes of this module.
+
+:::
+
+### Hypothesis testing with F-ratios
+
+If the null hypothesis is true, $F$-ratios follow a distribution, the **F-distribution**, which is a function of the within- and between-group degrees of freedom.
+
+::: {.column-margin}
+$F$-distribution: Reference distribution used for testing the overall null hypothesis of ANOVA. Requires two degrees of freedom.
+:::
+
+:::{.callout-note collapse="true"}
+### The sampling distribution analogy.
+
+Suppose that $H_0$ is true, and we do the following:
+
+1. Conduct the experiment.
+2. Compute $F$
+3. Repeat steps 1 and 2 many, many times, each time saving the value of $F$
+
+The resulting distribution of $F$-ratios will follow an F-distribution.
+
+This resulting distribution of $F$-ratios can be thought of as a sampling distribution. Its construction is analogous to the sampling distribution of the mean or other sampling distributions used for $z$, $t$, or $\chi^2$ tests.
+:::
+
+The F distribution is actually a family of distributions, whose shape varies according to our degrees of freedom.
+
+Try adjusting the between- and within- degrees of freedom to change the shape of the F distribution
+
+```{r}
+#| panel: fill
+plotlyOutput(outputId = "fdistributionPlot")
+```
+
+::::: {layout="[0.5, 0.5]"}
+::: {.column width="100%"}
+```{r}
+#| panel: fill
+sliderInput("df1", "Between-subjects df:",min=1,max=20,value=1,step=1)
+```
+:::
+
+::: {.column width="100%"}
+```{r}
+#| panel: fill
+sliderInput("df2", "Within-subjects df:",min=1,max=50,value=10,step=1)
+```
+:::
+:::::
+
+```{r}
+#| context: server
+library(plotly)
+theme_minimalism <- function(){
+  theme_minimal() + # ggplot's minimal theme hides many unnecessary features of plot
+  theme(            # make modifications to the theme
+    panel.grid.major.y=element_blank(),   # hide major grid for y axis
+    panel.grid.minor.y=element_blank(),   # hide minor grid for y axis
+    panel.grid.major.x=element_blank(),   # hide major grid for x axis
+    panel.grid.minor.x=element_blank(),   # hide minor grid for x axis
+    text=element_text(size=14),           # font aesthetics 
+    axis.text=element_text(size=12),
+    axis.title=element_text(size=14,face="bold"))
+}
+
+output$fdistributionPlot <- renderPlotly({
+  ggplot(data=data.frame(x=c(0:6)),aes(x)) +
+  stat_function(fun=df,
+                args=list(df1=input$df1, df2=input$df2),
+                geom="area", 
+                linetype="solid", 
+                fill=NA, 
+                size=1.25,
+                aes(color="Null Distribution"), 
+                xlim=c(0,6)) +
+  scale_x_continuous(limits=c(0,6),
+                     breaks= seq(0,6, by=1)) +
+  scale_y_continuous(breaks=NULL) +
+  ylab("Density")+
+  xlab("F ratio")+
+  scale_colour_manual("Legend",values = c("#a6cee3","#b2df8a")) +
+  theme_minimalism()
+})
+```
+
+We can use the F distribution for significance testing, following logic that large $F$-ratios would be surprising to obtain if $H_0$ were true:
+
+- Set an α value which corresponds to a percentage in the tail of the distribution. (i.e., if the null hypothesis is true, $\alpha$ is the probability of a Type I error). For example, $\alpha=.05$
+- If our $p$-value is less than $\alpha$ *or* the obtained $F$-ratio exceed a critical value determined by $\alpha$, we reject the null hypothesis.
+
+Rejecting the null hypothesis would mean that <!--group explains a significant amount of variability in our data, or, in other words, that--> at least one group mean is significantly different from another in a statistical sense. That is, we infer there is some difference among the group means in the population.
+
+In the following plot, the F distribution has:
+
+- $df_B = 2$ and $df_W = 12$
+- The critical region corresponding to $\alpha=.05$ highlighted
+- The critical value for $F$ corresponding to this region is about 3.89
+
+```{r}
+plot1 <- ggplot(data=data.frame(x=c(0:6)),aes(x)) +
+  stat_function(fun=df,
+                args=list(df1=2, df2=12),
+                geom="area", 
+                linetype="solid", 
+                fill=NA, 
+                size=1.25,
+                aes(color="Null Distribution"), 
+                xlim=c(0,6)) +
+  scale_x_continuous(limits=c(0,6),
+                     breaks= seq(0,6, by=1)) +
+  scale_y_continuous(breaks=NULL) +
+  ylab("Density")+
+  xlab("F ratio")+
+  scale_colour_manual("Legend",values = c("#a6cee3","#b2df8a")) +
+  theme_minimal()
+plot1 + stat_function(fun=df, # The upper critical region
+                args=list(df1=2, df2=12),
+                geom="area",
+                linetype="solid",
+                fill="#1f78b4", 
+                aes(color="Critical Region"),
+                xlim= c(qf(.05, df1=2,df2=12,lower.tail=F),6))
+```
+
+### The complete F-table
+
+If our software program or an online calculator provides us with the proportion of the F distribution in the right-hand tail beyond the obtained $F$-ratio, we report this as the $p$-value. In this case, there is about 0.014 proportion in the tail beyond our obtained $F = 6.2$.
+
+| Source  | SS  | df  | MS  | F   | p   |
+|---------|-----|-----|-----|-----|-----|
+| Between | 12.4  | 2   | 6.2  | 6.2  | 0.014  |
+| Within  | 12.0  | 12  | 1.0  |     |     |
+| Total   | 24.4 | 14  |     |     |     |
+
+In either case, examining the obtained $F$-ratio and comparing it to the critical value, or examining the $p$-value gives the same conclusion:
+
+- Since the obtained $F$-ratio of 6.2 is greater than its critical value (3.89), we reject $H_0$
+
+- Since $p = .014$, which is less than $\alpha = .05$, we reject $H_0$
+
+We conclude that there is some difference among the three group means in the population. Perhaps the type of study break has an effect on well-being. To shed more light on this issue may require post-hoc tests, which are not covered in this module.
+
+## Manipulation of both $SS_W$ and $SS_B$
+
+For illustrative purposes, we consider the case where ANOVA is applied to just two groups.
+
+Suppose $SS_T$ is fixed to a certain value. Try adjusting the relative proportion of between- and within- group variability. How does the F-ratio change as a result?
+
+::::: {layout="[0.33, 0.33, 0.33]"}
+::: {.column width="100%"}
+```{r}
+#| panel: fill
+plotOutput(outputId = "fratioPlot")
+#SSB <- 5
+#SSW <- 2
+#MSB <- SSB/1
+#MSW <- round(SSB/18,2)
+#f <- round(MSB/MSW,2)
+```
+:::
+
+::: {.column width="100%"}
+| Source  | SS                      | df  | MS        | F       | p   |
+|---------|-------------------------|-----|-----------|---------|-----|
+| Between | `{r} textOutput("SSB")` | 1   | `{r} textOutput("MSB")` | `{r} textOutput("Fratio")` |  `{r} textOutput("pval")`   |
+| Within  | `{r} textOutput("SSW")` | 18  | `{r} textOutput("MSW")` |         |     |
+| Total   | 125                     | 19  |           |         |     |
+:::
+:::::
+
+::: {.column width="100%"}
+```{r}
+#| panel: fill
+sliderInput("weight", "Proportion of variability due to between groups:",min=.01,max=.99,value=.25,step=.01)
+```
+:::
+
+```{r}
+#| context: server
+dat <- data.frame(Raw = c(9,8,2,4,6,7,2,3,8,4,7,4,10,8,8,2,5,7.7325,9,6),
+                   Group = c(1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2))
+
+datnew <- eventReactive({input$weight}, {
+  w <- input$weight
+  
+  # group and grand means
+  dat <- dat %>% group_by(Group) %>% mutate(GroupMean = mean(Raw)) %>% ungroup() %>% mutate(GrandMean = mean(Raw))
+  grand_mean <- mean(dat$Raw)
+  group_means <- dat %>% group_by(Group) %>% summarise(GroupMeans = mean(Raw)) %>% select(GroupMeans)
+  
+  SST <- as.numeric(dat %>% summarise(SST = sum((Raw - GrandMean)^2)))
+  
+  # Actual SSW and SSB based on raw data
+  SSW <- as.numeric(dat %>% group_by(Group) %>% mutate(dev2 = (Raw - GroupMean)^2) %>% ungroup() %>%
+    summarise(SSW = sum(dev2)))
+  SSB <- as.numeric(dat %>% group_by(Group) %>% summarise(GroupMean = mean(GroupMean),
+                                        GrandMean = mean(GrandMean)) %>%
+    mutate(ndev2 = 10*(GroupMean - GrandMean)^2) %>%
+    summarise(SSB = sum(ndev2)))
+
+  # New targets based on slider
+  targetSSB <- w*SST
+  targetSSW <- SST - targetSSB
+
+  # Rescale SSB
+  new_sdg <- sqrt((targetSSB/1) / 10) # 10 is sample size per group; 1 is df
+  new_group_means <- as.vector(new_sdg*scale(group_means) + grand_mean)
+  mean_diff <- group_means - new_group_means
+  dat <- merge(dat, data.frame(Group = c(1,2),
+             new_group_mean = new_group_means))
+  dat <- dat %>% mutate(mean_diff = GroupMean - new_group_mean,
+                        newvalue = Raw - (GroupMean - new_group_mean))
+  dat$Raw <- dat$newvalue
+  dat$GroupMean <- dat$new_group_mean
+  
+  # Rescale SSW
+  # ratio of ssw to new ssw
+  const <- as.numeric(targetSSW/SSW)
+  # rescale w/in each group
+  dat <- dat %>% group_by(Group) %>%
+    mutate(z = (Raw - GroupMean)/sd(Raw),
+           sd = sd(Raw)) %>%
+    mutate(newScore = sqrt(const)*sd*z + GroupMean)
+  
+  # compute values for output
+  output$SSW <- renderText({
+    round(targetSSW,2)
+  })
+  
+  output$SSB <- renderText({
+    round(targetSSB,2)
+  })
+  
+  output$MSW <- renderText({
+    round(targetSSW/18,2)
+  })
+  
+  output$MSB <- renderText({
+    round(targetSSB/1,2)
+  })
+  
+  Fratio <- (targetSSB/1)/(targetSSW/18)
+  output$Fratio <- renderText({
+    round(Fratio, 2)
+  })
+  
+  output$pval <- renderText({
+    pval <- pf(Fratio, 1, 18, lower.tail=FALSE)
+    round(pval, 4)
+  })
+  
+  return(list(newdat = dat, group_means = new_group_means))
+})
+
+output$fratioPlot <- renderPlot({
+  #if (weight() > 0) {dat$Score <- dat$Raw - dat$Diff_bet*weight()} else {dat$Score <- dat$Raw - dat$Diff_wit*abs(weight())}
+  tmp <- datnew()
+  newdat <- tmp$newdat
+  newdat <- newdat %>% mutate(Group = as.factor(Group))
+  ggplot(data=newdat, aes(x=newScore, fill=Group)) +
+                  geom_dotplot(position="dodge") +
+  scale_y_continuous(name = "", breaks = NULL) +
+  scale_fill_brewer(palette = "Dark2") + 
+  annotate("text",x=5.5,y=.7,label=paste0("Group 1 Mean: ", round(tmp$group_means[1],2)), vjust = 1, hjust = 0) +
+  annotate("text",x=5.5,y=.5,label=paste0("Group 2 Mean: ", round(tmp$group_means[2],2)), vjust = 1, hjust = 0) +
+  xlab("Scores") + 
+  xlim(1, 10) +
+  theme_classic()
+})
+
+# Used to double-check calculations
+# output$SSW <- renderText({
+#   newdat <- datnew()$newdat
+#   dat_g1 <- filter(newdat,Group==1)
+#   dat_g2 <- filter(newdat,Group==2)
+#   ssw <- sum((dat_g1$newScore-mean(dat_g1$newScore))^2 ) +  sum((dat_g2$newScore-mean(dat_g2$newScore))^2 )
+#   round(ssw, 2)
+#  })
+#  
+# output$SSB <- renderText({
+#   newdat <- datnew()$newdat
+#   dat_g1 <- filter(newdat,Group==1)
+#   dat_g2 <- filter(newdat,Group==2)
+#   ssb <- (mean(dat_g1$newScore) - mean(newdat$newScore))^2*10 + (mean(dat_g2$newScore) - mean(newdat$newScore))^2*10
+#   round(ssb, 2)
+# })
+
+```
+
+- [Is the $F$-ratio larger when $SS_B$ is large or when $SS_W$ is large?]{style="color: blue;"}
+
+:::{.details summary = "Click here to see answer"}
+Assuming the degrees of freedom are constant, the $F$-ratio will increase as $SS_B$ increases relative to $SS_W$.
+
+One caution: since each are divided by their respective degrees of freedom, one cannot compare $SS_B$ and $SS_W$ alone to know whether the $F$-ratio will be large.
+:::
+
+- [At what point does the $F$-ratio indicate a statistically significant difference (at $\alpha=.05$) between the groups?]{style="color: blue;"}
+
+:::{.details summary = "Click here to see answer"}
+For this dataset, when the proportion of variability due to between-group differences is .2, the $p$ value is less than our critical $\alpha$ value of .05, indicating a statistically significant difference.
+:::
+
+- [Can the distributions for the two groups overlap when the $F$-ratio indicates a statistically significant difference (at $\alpha=.05$)?]{style="color: blue;"}
+
+:::{.details summary = "Click here to see answer"}
+Yes - although the group means will be different, the distributions of group scores can (and usually do) overlap to some extent.
+:::
+
+
+## Learning check: Another Example
+
+For illustrative purposes, we consider the case where ANOVA is applied to just two groups.
+
+Consider the following two datasets, each of which contains two groups.
+
+```{r}
+dataset3 <- data.frame(Group1 = c(3,7,3,7,3,7),Group2=c(7,3,7,3,7,3))
+dataset4 <- data.frame(Group1 = c(3,3,3,3,3,3),Group2=c(7,7,7,7,7,7))
+```
+
+::: {.panel-tabset}
+
+### Raw Data
+
+::::: {layout="[0.5, 0.5]"}
+::: {.column width="50%"}
+
+Dataset 1
+```{r}
+knitr::kable(dataset3, align='c')
+```
+:::
+
+::: {.column width="50%"}
+
+Dataset 2
+```{r}
+knitr::kable(dataset4, align='c')
+```
+:::
+:::::
+
+### Plots
+
+```{r}
+library(RColorBrewer)
+library(tidyverse)
+library(ggpubr)
+
+# convert to format for ggplot2
+dataset3_long <- dataset3 %>% pivot_longer(cols=c("Group1","Group2"), names_to="group")
+dataset4_long <- dataset4 %>% pivot_longer(cols=c("Group1","Group2"), names_to="group")
+
+grand_mean1 <- mean(dataset3_long$value)
+group_means1 <- colMeans(dataset3)
+
+grand_mean2 <- mean(dataset4_long$value)
+group_means2 <- colMeans(dataset4)
+
+dat1 <- dataset3_long %>% group_by(group) %>% mutate(GroupMean = mean(value)) %>% ungroup()
+dat2 <- dataset4_long %>% group_by(group) %>% mutate(GroupMean = mean(value)) %>% ungroup()
+
+# for within-group deviations
+dat1<- dat1 %>% mutate(start_val = recode(group, "Group1" = 0.75, "Group2" = 1.75),
+               end_val = recode(group, "Group1" = 1.25, "Group2" = 2.25))
+dat2<- dat2 %>% mutate(start_val = recode(group, "Group1" = 0.75, "Group2" = 1.75),
+               end_val = recode(group, "Group1" = 1.25, "Group2" = 2.25))
+
+# jitter so that points don't overlap
+pos <- position_jitter(width = 0.3, height = 0, seed = 323)
+
+plot1 <- ggplot(dat1, aes(x = factor(group), y = value, color = factor(group))) +
+  
+  # points
+  geom_point(position = pos, size = 3) +
+
+  # group means
+  geom_segment(aes(x=start_val, xend = end_val, y=GroupMean, yend=GroupMean))+
+
+  scale_color_brewer(palette = "Dark2", name = "Group") +
+  labs(y = "Well-being", x = "Group", title = "Dataset 1") +
+  theme_minimal(base_size = 15) + 
+  ylim(2, 8)
+
+plot2 <- ggplot(dat2, aes(x = factor(group), y = value, color = factor(group))) +
+  
+  # points
+  geom_point(position = pos, size = 3) +
+
+  # group means
+  geom_segment(aes(x=start_val, xend = end_val, y=GroupMean, yend=GroupMean))+
+
+  scale_color_brewer(palette = "Dark2", name = "Group") +
+  labs(y = "Well-being", x = "Group", title = "Dataset 2") +
+  theme_minimal(base_size = 15) + 
+  ylim(2, 8)
+
+ggarrange(plot1, plot2, nrow=1, ncol=2)
+
+```
+:::
+
+The total variability (Sum of squares total) in these datasets are the same, yet they tell very different stories. To learn about these differences, complete the following questions.
+
+- [Compute the grand mean, $\bar{x}$, for each dataset]{style="color: blue;"}
+
+:::{.details summary = "Click here to see answer"}
+Here we omit notation indicating that there are two separate groups for each dataset.
+
+Dataset 1:
+
+$$\bar{x} = \frac{\sum^{n_i}_{i=1}x_i}{n} = \frac{3+7+3+7+3+7+7+3+7+3+7+3}{12} = 5$$
+
+Dataset 2:
+
+$$\bar{x} = \frac{\sum^{n_i}_{i=1}x_i}{n} = \frac{3+3+3+3+3+3+7+7+7+7+7+7}{12} = 5$$
+
+:::
+
+- [Compute the group means, $\bar{x}_1$ and $\bar{x}_2$, for each dataset]{style="color: blue;"}
+
+:::{.details summary = "Click here to see answer"}
+
+Dataset 1:
+
+$$\bar{x}_1 = \frac{\sum^{n_1}_{i=1}x_{i1}}{n_1} = \frac{3+7+3+7+3+7}{6} = 5$$
+
+$$\bar{x}_2 = \frac{\sum^{n_2}_{i=1}x_{i2}}{n_2} = \frac{7+3+7+3+7+3}{6} = 5$$
+
+
+Dataset 2:
+
+$$\bar{x}_1 = \frac{\sum^{n_1}_{i=1}x_{i1}}{n_1} = \frac{3+3+3+3+3+3}{6} = 3$$
+
+$$\bar{x}_2 = \frac{\sum^{n_2}_{i=1}x_{i2}}{n_2} = \frac{7+7+7+7+7+7}{6} = 7$$
+
+:::
+
+- [Compute $SS_T$ for each dataset; are they in fact the same?]{style="color: blue;"}
+
+:::{.details summary = "Click here to see answer"}
+Dataset 1:
+
+Recall that, $\bar{x} = 5$.
+
+\begin{align*}
+SS_T = & \sum^k_{g=1}\sum^{n_g}_{i=1}(x_{ig}-\bar{x})^2 = (3-5)^2 + (7-5)^2 + (3-5)^2 + (7-5)^2 + (3-5)^2 + (7-5)^2\\
+& + (7-5)^2 + (3-5)^2 + (7-5)^2 + (3-5)^2 + (7-5)^2 + (3-5)^2\\
+= & 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = 48
+\end{align*}
+
+
+Dataset 2:
+
+Recall that, $\bar{x} = 5$.
+
+\begin{align*}
+SS_T = & \sum^k_{g=1}\sum^{n_g}_{i=1}(x_{ig}-\bar{x})^2 = (3-5)^2 + (3-5)^2 + (3-5)^2 + (3-5)^2 + (3-5)^2 + (3-5)^2\\
++ & (7-5)^2 + (7-5)^2 + (7-5)^2 + (7-5)^2 + (7-5)^2 + (7-5)^2\\
+= & 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = 48
+\end{align*}
+
+We can see that $SS_T$ is the same for both datasets.
+:::
+
+- [Compute $SS_B$ for each dataset. Which dataset has the larger $SS_B$?]{style="color: blue;"}
+
+:::{.details summary = "Click here to see answer"}
+Dataset 1:
+
+$\bar{x}_1 = 5$
+$\bar{x}_2 = 5$
+$n_g = 6$$ for each dataset.
+
+$$SS_B = \sum^k_{g=1}n_g(\bar{x}_{g}-\bar{x})^2 = 6*(5-5)^2 + 6*(5-5)^2 = 0$$
+
+Dataset 2:
+
+$\bar{x}_1 = 3 $
+$\bar{x}_2 = 7 $
+$n_g = 6$ for each dataset.
+
+$$SS_B = \sum^k_{g=1}n_g(\bar{x}_{g}-\bar{x})^2 = 6*(3-5)^2 + 6*(7-5)^2 = 48$$
+
+Dataset 2 has the larger $SS_B$.
+:::
+
+- [Compute $SS_W$ for each dataset. Which dataset has the larger $SS_W$?]{style="color: blue;"}
+
+:::{.details summary = "Click here to see answer"}
+Dataset 1:
+
+$\bar{x}_1 = 5$
+$\bar{x}_2 = 5$
+
+\begin{align*}
+SS_W = & \sum^k_{g=1}\sum^{n_g}(x_{ig}-\bar{x}_g)^2 = (3-5)^2 + (7-5)^2 + (3-5)^2 + (7-5)^2 + (3-5)^2 + (7-5)^2\\
+& + (7-5)^2 + (3-5)^2 + (7-5)^2 + (3-5)^2 + (7-5)^2 + (3-5)^2\\
+= & 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = 48
+\end{align*}
+
+Dataset 2:
+
+$\bar{x}_1 = 3$
+$\bar{x}_2 = 7$
+
+\begin{align*}
+SS_W = & \sum^k_{g=1}\sum^{n_g}(x_{ig}-\bar{x}_g)^2 = (3-3)^2 + (3-3)^2 + (3-3)^2 + (3-3)^2 + (3-3)^2 + (3-3)^2\\
+& + (7-7)^2 + (7-7)^2 + (7-7)^2 + (7-7)^2 + (7-7)^2 + (7-7)^2\\
+= & 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 = 48
+\end{align*}
+
+Dataset 1 has the larger $SS_W$.
+
+:::
+
+- [Complete an ANOVA table for each dataset. Which dataset is more likely to reject $H_0$?]{style="color: blue;"}
+
+:::{.details summary = "Click here to see answer"}
+Dataset 1:
+
+| Source  | SS  | df  | MS  | F   |
+|---------|-----|-----|-----|-----|
+| Between | 0   | 1   | 0   | 0  |
+| Within  | 48  | 10  | 48 |     |
+| Total   | 48  | 11  |     |     |
+
+
+Dataset 2:
+
+| Source  | SS  | df  | MS  | F   |
+|---------|-----|-----|-----|-----|
+| Between | 48   | 1   | 48   | \infty  |
+| Within  | 0  | 10  | 0 |     |
+| Total   | 48  | 11  |     |     |
+:::
+
+<!--
+# Part 3: Linear regression
+
+## Linear Regression
+
+When conducting a simple regression analysis, we start with (at least) one continuous independent variable and a continuous dependent variable.
+
+```{r scatterplot}
+data_scatterplot <- data.frame(x=c(9,8,9,7,4,3,6,6,7,5),y=c(5,4,1,3,5,2,5,0,2,4))
+ggplot(data=data_scatterplot, aes(x=x,y=y)) +
+  geom_point()
+```
+
+## Regression Line (Line of Best Fit)
+
+We then fit these data with a "line of best fit", which represents the model's best predicted Y value for a given X-value
+
+```{r}
+ggplot(data=data_scatterplot, aes(x=x,y=y)) +
+  geom_point() +
+  geom_smooth(method='lm', formula= y~x)
+```
+
+## Predicted Values
+
+We can see that the line doesn't perfectly match the data; for example, the model says for an x value of 5, we should get a y value of 4 ($\hat{y}=4$)
+
+```{r}
+ggplotly(ggplot(data=data_scatterplot, aes(x=x,y=y)) +
+  geom_point() +
+  geom_smooth(method='lm', formula= y~x) +
+  geom_segment(aes(x=3,xend=5,y=3.15,yend=3.15), colour="red") +
+  geom_segment(aes(x=5,xend=5,y=0,yend=3.15), colour="red") +
+  annotate("text",x=4,y=4,label=paste0("We if observe an x value of 5 ..."), vjust = 1, hjust = 0, colour="red") +
+    annotate("text",x=5,y=3.5,label=paste0(" ... the model says we should have a y value of 3.15"), vjust = 1, hjust = 0, colour="red"))
+
+
+```
+
+## Predicted Values
+
+```{r}
+
+ggplotly(ggplot(data=data_scatterplot, aes(x=x,y=y)) +
+  geom_point() +
+  geom_smooth(method='lm', formula= y~x) +
+  geom_segment(aes(x=5,xend=5,y=4,yend=3.15), colour="red"))
+
+
+```
+
+But, we have a datapoint with an x value of 5 and a y value of 4. Our model is off by 0.85 units.
+
+## Residuals {.smaller}
+
+This discrepancy between our model predicted value ($\hat{y_i}$) and our observed value ($y_i$) is called a *residual* ($e_i$). The residual value for this datapoint is .85.
+
+```{r}
+ggplotly(ggplot(data=data_scatterplot, aes(x=x,y=y)) +
+  geom_point() +
+  geom_smooth(method='lm', formula= y~x) +
+  geom_segment(aes(x=5,xend=5,y=4,yend=3.15), colour="red"))
+```
+
+We can think of the residual as how wrong our model is for this given datapoint. It's similar to the variability of a datapoint from the mean, expect the "mean" here is the predicted value ($\hat{y_i}$) as determined by the regression line.
+
+## Residuals for estimation {.smaller}
+
+We can sum together the residuals from a regression line to get a metric of how accurate out model is. Here, the solid line fits the data better than the dashed line, and its total squared residuals is less than the dashed line.
+
+```{r}
+ggplotly(ggplot(data=data_scatterplot, aes(x=x,y=y)) +
+  geom_point() +
+  geom_smooth(method='lm', formula= y~x) +
+  geom_abline(slope=.2, intercept=3,linetype="dashed") +
+    annotate("text", x=7, y=5.5,label=paste0("Sum of Squared Residuals (Solid line): ",round(sum(resid(lm(y ~ x, data=data_scatterplot))^2),2)),hjust=0) +
+    annotate("text", x=7, y=5,label=paste0("Sum of Squared Residuals (Dashed line): ",round(sum((data_scatterplot$y-(3 + .2*data_scatterplot$x))^2),2),hjust=0))
+  )
+```
+
+## Analytical vs. Iterative Estimation {.smaller}
+
+In linear regression, there is an *analytical solution*, meaning we can plug in a formula to get the line of best fit.
+
+In more complicated forms of regression, there isn't a formula to give us the answer; instead, we need to iteratively estimate the parameters
+
+That means we guess ("estimate") a value for the intercept and slope; we then use the residuals to assess how wrong our estimate is.
+
+```{r}
+ggplotly(ggplot(data=data_scatterplot, aes(x=x,y=y)) +
+  geom_point() +
+  geom_abline(slope=.2, intercept=3,linetype="dashed") +
+  annotate("text", x=8, y=5,label=paste0("Sum of Squared Residuals (First iteration): ",sum((data_scatterplot$y-(3 + .2*data_scatterplot$x))^2),hjust=0)))
+```
+
+## Iterative Estimation
+
+Then, we change the slope and intercept estimates a little, and assess the residuals again. If overall the residuals have gotten smaller, then we know these new estimates are more accurate.
+
+```{r}
+ggplotly(ggplot(data=data_scatterplot, aes(x=x,y=y)) +
+  geom_point() +
+  geom_abline(slope=.2, intercept=3,linetype="dashed", colour="grey") +
+  geom_abline(slope=-.05, intercept=3.2,linetype="dashed") +
+  annotate("text", x=6, y=5,label=paste0("Sum of Squared Residuals (First iteration): ",sum((data_scatterplot$y-(3 + .2*data_scatterplot$x))^2),hjust=0)) +
+  annotate("text", x=6, y=4.5,label=paste0("Sum of Squared Residuals (Second iteration): ",sum((data_scatterplot$y-(3.2 + -.05*data_scatterplot$x))^2),hjust=0)))
+```
+
+We repeat this process until our model stops improving (that is, the sum of squared residuals stops getting smaller)
+
+## (Negative) Log Likelihood
+
+For computational reasons, we typically don't usually work with residuals directly.
+
+Instead, we transform the our residuals into (negative) *log likelihood values*
+
+The closer the negative log likelihood value is to zero, the more closely our model fits the data.
+
+## Minimizing Negative Log Likelihood
+
+Try it out for yourself; adjust the slope and intercept estimates until the negative log likelihood value is as small as it can be.
+
+```{r}
+#| panel: fill
+plotlyOutput(outputId = "maximumLikelihoodPlot")
+```
+
+::::: {layout="[0.5, 0.5]"}
+::: {.column width="100%"}
+```{r}
+#| panel: fill
+sliderInput("intercept", "Intercept:",min=0,max=100,value=38.61980885,step=1)
+```
+:::
+
+::: {.column width="70%"}
+```{r}
+#| panel: fill
+sliderInput("slope", "Slope:",min=-2,max=2,value=0.246209999,step=.1)
+```
+:::
+:::::
+
+```{r}
+#| context: server
+library(plotly)
+theme_minimalism <- function(){
+  theme_minimal() + # ggplot's minimal theme hides many unnecessary features of plot
+  theme(            # make modifications to the theme
+    panel.grid.major.y=element_blank(),   # hide major grid for y axis
+    panel.grid.minor.y=element_blank(),   # hide minor grid for y axis
+    panel.grid.major.x=element_blank(),   # hide major grid for x axis
+    panel.grid.minor.x=element_blank(),   # hide minor grid for x axis
+    text=element_text(size=14),           # font aesthetics 
+    axis.text=element_text(size=12),
+    axis.title=element_text(size=14,face="bold"))
+}
+
+output$maximumLikelihoodPlot <- renderPlotly({
+  lower <- 0
+  upper <- 120
+  x <- c(41,21,9,37,91,15,100,59,35,93,80,34,10,51,86,59,73,23,59,79,27,70,25,56,85)
+  y <- c(52,56,1,16,93,84,86,86,1,4,11,55,69,92,86,6,1,85,50,88,20,81,36,35,96)
+  dat <- data.frame(x,y)
+  res <- lm(y ~ x, data=dat)
+  intercept <- res$coefficients[1]
+  slope <- res$coefficients[2]
+  n <- 25
+  fitValues <- input$intercept+(x*input$slope)
+  sumsquares <- (y-(input$intercept+(x*input$slope)))^2
+  ll <- 0.5*(0-n*(log(2*pi)+1-log(n)+log(sum(sumsquares))))
+  
+plot3 <- ggplot(data=dat,aes(x=x,y=y)) +
+  geom_point() +
+  geom_abline(
+    slope=slope,
+    intercept=intercept,
+    color="grey",
+    alpha=.5) +
+  geom_abline(
+    slope=input$slope,
+    intercept=input$intercept) +
+  annotate("text",x=100,y=100,label=paste0("Log Likelihood = ",ll),vjust=5,hjust=3) +
+  #Clears the y-axis label
+  ylab("Y-Values") +
+  xlab("X-Values") +
+  #Sets the x axis ticks to cover the whole plot
+  #scale_x_continuous(limits=c(lower,upper),breaks= seq(round(lower),round(upper),by=1)) +
+  #Clears the y-axis ticks
+  #scale_y_continuous(breaks=NULL) +
+  theme_minimalism()
+
+for (i in 1:n) {
+   plot3 <- plot3 + geom_segment(x=x[i], y=y[i], xend=x[i], yend=fitValues[i], colour="grey", alpha=.25)
+}
+  plot3
+})
+```
+-->
