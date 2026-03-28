@@ -782,7 +782,7 @@ library(ggplot2)
 
 ui <- fluidPage(
   plotOutput("ssbplot"),
-  sliderInput("ssbscale", "Sum of squares between:",min=0,max=75,value=12.4,step=.2)
+  sliderInput("ssbscale", "Sum of squares model:",min=0,max=75,value=12.4,step=.2)
 )
 
 server <- function(input, output) {
@@ -930,7 +930,7 @@ library(ggplot2)
 
 ui <- fluidPage(
   plotOutput("sswplot"),
-  sliderInput("sswscale", "Sum of squares within:",min=0.2,max=50,value=11.9,step=.2)
+  sliderInput("sswscale", "Sum of squares residual:",min=0.2,max=50,value=11.9,step=.2)
 )
 
 server <- function(input, output) {
@@ -1394,7 +1394,7 @@ library(ggplot2)
 ui <- fluidPage(
   column(width = 12, plotOutput(outputId = "fratioPlot")),
   column(width = 2,   sliderInput("weight",
-                                  "Proportion of variability due to between groups:",
+                                  "Proportion of variability due to model (between groups):",
                                   min=.01, max=.99, value=.25, step=.01)),
   column(width = 10, tableOutput("anovaTable"))
 )
