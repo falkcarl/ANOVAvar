@@ -708,9 +708,9 @@ These two sources of variance map onto reasons why the scores for the dependent 
 
 The terms "between" and "within" group variability are likely more intuitive if you have not been exposed to more general modeling frameworks, but are specific to ANOVA. Different authors and teachers will use different terminology depending on their preference. In this version of the module we are using these terms interchangeably with "model" and "residual," respectively, in anticipation of moving on to other modeling frameworks, such as multiple linear regression or the general linear model.
 
-For example, between group variability is the amount of total variability that is explained by the model. But, use of "between" group variability will make less sense to use as terminology if the predictor variables are quantitative (i.e., continuous, not categorical).
+For example, between group variability is the amount of total variability that is explained by the model. But, use of "between" group variability will make less sense to use as terminology if the predictor variables are quantitative (i.e., continuous, not categorical) since there would not be any groups.
 
-What is the "model" for ANOVA? Briefly, a statistical model provides a way of representing the data and a simplified belief about how the data were generated in reality. The model for a one-way between-subjects ANOVA allows each group to have a different mean. Models also allow us to make predictions. The ANOVA model here states that we can do a better job of predicting each participant's score by using the mean of their group.
+What is the "model" for ANOVA? Briefly, a statistical model provides a way of representing the data and a simplified belief about how the data were generated in reality. The model for a one-way between-subjects ANOVA allows each group to have a different mean. Models also allow us to make predictions. The ANOVA model here states that we can do a better job of predicting each participant's score by using the mean of their group (as opposed to the grand mean).
 :::
 
 ### Sum of squares model (or sum of squares between)
@@ -1128,7 +1128,7 @@ Recall that $n$ is the total sample size and $k$ is the number of groups.
 Between-group degrees of freedom: $df_M$
 
 Within-group degrees of freedom: $df_R$
-::
+:::
 
 For this example,
 
