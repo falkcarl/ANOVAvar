@@ -638,7 +638,7 @@ window.Quarto = {
 <li><span style="color: blue;">Try computing the sum of squared deviations for Dataset 1. To see the values for Dataset 1, click on the “Dataset 1” tab of any of the above Tables. You can either start from the raw data (at the top) or the squared deviations (the most recent Table above).</span></li>
 </ul>
 <!-- requires quarto add coatless-quarto/details-->
-<details aria-label="Click here to see the answer" id="details-1">
+<details id="details-1" aria-label="Click here to see the answer">
 <summary>Click here to see the answer</summary>
 <p>For dataset 1, we have:</p>
 <p><span class="math display">\[\begin{align*}
@@ -652,7 +652,7 @@ window.Quarto = {
 <ul>
 <li><span style="color: blue;">Which dataset has a larger sum of squares?</span></li>
 </ul>
-<details aria-label="Click here to see the answer" id="details-2">
+<details id="details-2" aria-label="Click here to see the answer">
 <summary>Click here to see the answer</summary>
 <p>Dataset 1 had 10.4 and dataset 2 had 80.4 for the sum of squares. Therefore, dataset 2 had the larger sum of squares.</p>
 <div class="callout callout-style-default callout-warning callout-titled">
@@ -803,7 +803,7 @@ shinyApp(ui = ui, server = server)
 <li>It’s too unpredictable to say.</li>
 </ol></li>
 </ul>
-<details aria-label="Click here to see the answer" id="details-3">
+<details id="details-3" aria-label="Click here to see the answer">
 <summary>Click here to see the answer</summary>
 <p>(b). As sample size increases, the sum of squares increases. This makes the sum of squares difficult to use if we want to compare the variability of two different samples that may differ in sample size, or estimate the variability of a population from a sample. However, sum of squares will still be useful in the analysis of variance: as we will see later, it can be easily partitioned.</p>
 </details>
@@ -826,7 +826,7 @@ s^2 =  \frac{\sum_{i=1}^n (x_i -\bar{x})^2}{n-1} = \frac{80.4}{10-1} \approx 8.9
 <ul>
 <li><span style="color: blue;">What is the variance of dataset 1?</span></li>
 </ul>
-<details aria-label="Click here to see the answer" id="details-4">
+<details id="details-4" aria-label="Click here to see the answer">
 <summary>Click here to see the answer</summary>
 <p><span class="math display">\[\begin{align*}
 s^2 =  \frac{\sum_{i=1}^n (x_i -\bar{x})^2}{n-1} = \frac{10.4}{10-1} \approx 1.556
@@ -849,7 +849,7 @@ s = \sqrt{s^2} = \sqrt{8.933} \approx 2.989
 <ul>
 <li><span style="color: blue;">What is the standard deviation of dataset 1?</span></li>
 </ul>
-<details aria-label="Click here to see the answer" id="details-5">
+<details id="details-5" aria-label="Click here to see the answer">
 <summary>Click here to see the answer</summary>
 <p><span class="math display">\[\begin{align*}
 s = \sqrt{s^2} = \sqrt{1.556} \approx 1.247
@@ -887,21 +887,21 @@ s = \sqrt{s^2} = \sqrt{1.556} \approx 1.247
 </div></div><ul>
 <li><span style="color: blue;">In this example, what is the independent variable and its levels?</span></li>
 </ul>
-<details aria-label="Click here to see the answer" id="details-6">
+<details id="details-6" aria-label="Click here to see the answer">
 <summary>Click here to see the answer</summary>
 <p>In this example, “study break type” is the independent variable, and it has three levels: Control, mindfulness, and walking.</p>
 </details>
 <ul>
 <li><span style="color: blue;">In this example, what is the dependent variable?</span></li>
 </ul>
-<details aria-label="Click here to see the answer" id="details-7">
+<details id="details-7" aria-label="Click here to see the answer">
 <summary>Click here to see the answer</summary>
 <p>In this example, well-being is the dependent variable. Note that the research question describes this variable as the outcome of interest, and it is measured from 0 to 10 (which is arguably quantitative given the good number of possible scores).</p>
 </details>
 <ul>
 <li><span style="color: blue;">Is the alternative hypothesis <span class="math inline">\(H_1: \mu_1 \ne \mu_2 \ne \mu_3\)</span>?</span></li>
 </ul>
-<details aria-label="Click here to see the answer" id="details-8">
+<details id="details-8" aria-label="Click here to see the answer">
 <summary>Click here to see the answer</summary>
 <p>It is better to say that not all of the population means are equal to each other under <span class="math inline">\(H_1\)</span>.</p>
 <p>We do not need all three means to be different than each other under the alternative hypothesis, though this is a possibility. For example, it could be that only two means are different from each other: <span class="math inline">\(\mu_1 = \mu_2 \ne \mu_3\)</span> or <span class="math inline">\(\mu_1 \ne \mu_2 = \mu_3\)</span> or it could be only <span class="math inline">\(\mu_1 \ne \mu_3 = \mu_2\)</span>.</p>
@@ -909,7 +909,7 @@ s = \sqrt{s^2} = \sqrt{1.556} \approx 1.247
 <ul>
 <li><span style="color: blue;">What would <span class="math inline">\(H_0\)</span> be if there were 5 levels (or 5 groups)?</span></li>
 </ul>
-<details aria-label="Click here to see the answer" id="details-9">
+<details id="details-9" aria-label="Click here to see the answer">
 <summary>Click here to see the answer</summary>
 <p><span class="math inline">\(H_0: \mu_1 = \mu_2 = \mu_3 = \mu_4 = \mu_5\)</span></p>
 </details>
@@ -1052,7 +1052,7 @@ SS_T = \sum_{g=1}^ k\sum_{i=1}^{n_g} (x_{ig} - \bar{x})^2
 <ul>
 <li><span style="color: blue;">Can you show how to compute <span class="math inline">\(SS_T\)</span> for this dataset?</span></li>
 </ul>
-<details aria-label="Click here to see the computations" id="details-10">
+<details id="details-10" aria-label="Click here to see the computations">
 <summary>Click here to see the computations</summary>
 <p><span class="math display">\[\begin{align*}
 SS_T = &amp; (4-5.2)^2 + (3-5.2)^2 + (5-5.2)^2 + (4-5.2)^2 + (5-5.2)^2 +\\
@@ -1141,7 +1141,7 @@ library(ggplot2)
 
 ui &lt;- fluidPage(
   plotOutput("ssbplot"),
-  sliderInput("ssbscale", "Sum of squares between:",min=0,max=75,value=12.4,step=.2)
+  sliderInput("ssbscale", "Sum of squares model:",min=0,max=75,value=12.4,step=.2)
 )
 
 server &lt;- function(input, output) {
@@ -1216,7 +1216,7 @@ shinyApp(ui = ui, server = server)</code></pre>
 <li>Deviations between the group means and the grand mean are unpredictable.</li>
 </ol></li>
 </ul>
-<details aria-label="Click here to see the answer" id="details-11">
+<details id="details-11" aria-label="Click here to see the answer">
 <summary>Click here to see the answer</summary>
 <ol start="3" type="a">
 <li>Deviations between the group means and the grand mean become larger. Note how when the slider is moved to the right, <span class="math inline">\(SS_M\)</span> is larger and so are the dotted lines between each group’s mean and the grand mean.</li>
@@ -1261,7 +1261,7 @@ library(ggplot2)
 
 ui &lt;- fluidPage(
   plotOutput("sswplot"),
-  sliderInput("sswscale", "Sum of squares within:",min=0.2,max=50,value=11.9,step=.2)
+  sliderInput("sswscale", "Sum of squares residual:",min=0.2,max=50,value=11.9,step=.2)
 )
 
 server &lt;- function(input, output) {
@@ -1350,7 +1350,7 @@ shinyApp(ui = ui, server = server)
 <li>Deviations between the scores and the group means are unpredictable.</li>
 </ol></li>
 </ul>
-<details aria-label="Click here to see the answer" id="details-12">
+<details id="details-12" aria-label="Click here to see the answer">
 <summary>Click here to see the answer</summary>
 <ol start="3" type="a">
 <li>Deviations between the scores and the group means become larger. Note how when the slider is moved to the right, <span class="math inline">\(SS_R\)</span> is larger and so are the dotted lines between each score and their group’s mean. But, the group means do not change.</li>
@@ -1478,7 +1478,7 @@ shinyApp(ui = ui, server = server)
 <ul>
 <li><span style="color: blue;">Can you show how <span class="math inline">\(SS_R\)</span> and <span class="math inline">\(SS_M\)</span> are computed for this dataset?</span></li>
 </ul>
-<details aria-label="Click here to see answer" id="details-13">
+<details id="details-13" aria-label="Click here to see answer">
 <summary>Click here to see answer</summary>
 <p><span class="math inline">\(\bar{x}_1 = 4.2\)</span></p>
 <p><span class="math inline">\(\bar{x}_2 = 5\)</span></p>
@@ -1567,7 +1567,7 @@ df_R = n-k
 <ul>
 <li><span style="color: blue;">Hypothetically, if there were 4 groups and 20 subjects in each group, what would be the values of <span class="math inline">\(df_M\)</span> and <span class="math inline">\(df_R\)</span>?</span></li>
 </ul>
-<details aria-label="Click here to see answer" id="details-14">
+<details id="details-14" aria-label="Click here to see answer">
 <summary>Click here to see answer</summary>
 <p>Number of groups (<span class="math inline">\(k\)</span>) = <span class="math inline">\(4\)</span> Number of subjects (<span class="math inline">\(n\)</span>) = <span class="math inline">\(4 \times 20 = 80\)</span></p>
 <p><span class="math display">\[df_M = k-1 = 4 - 1 = 3\]</span> <span class="math display">\[df_R = n-k = 80 - 4 = 76\]</span></p>
@@ -1624,7 +1624,7 @@ MS_R = \frac{SS_R}{df_R}
 <ul>
 <li><span style="color: blue;">Can you show the computations for <span class="math inline">\(MS_M\)</span> and <span class="math inline">\(MS_R\)</span>?</span></li>
 </ul>
-<details aria-label="Click here to see answer" id="details-15">
+<details id="details-15" aria-label="Click here to see answer">
 <summary>Click here to see answer</summary>
 <p><span class="math display">\[MS_M = \frac{SS_M}{df_M} = \frac{12.4}{2} = 6.2\]</span></p>
 <p><span class="math display">\[MS_R =\frac{SS_R}{df_R} = \frac{12}{1} = 12\]</span></p>
@@ -1888,7 +1888,7 @@ library(ggplot2)
 ui &lt;- fluidPage(
   column(width = 12, plotOutput(outputId = "fratioPlot")),
   column(width = 2,   sliderInput("weight",
-                                  "Proportion of variability due to between groups:",
+                                  "Proportion of variability due to model (between groups):",
                                   min=.01, max=.99, value=.25, step=.01)),
   column(width = 10, tableOutput("anovaTable"))
 )
@@ -2009,7 +2009,7 @@ shinyApp(ui = ui, server = server)</code></pre>
 <ul>
 <li><span style="color: blue;">Is the <span class="math inline">\(F\)</span>-ratio larger when <span class="math inline">\(SS_M\)</span> is large or when <span class="math inline">\(SS_R\)</span> is large?</span></li>
 </ul>
-<details aria-label="Click here to see answer" id="details-16">
+<details id="details-16" aria-label="Click here to see answer">
 <summary>Click here to see answer</summary>
 <p>Assuming the degrees of freedom are constant, the <span class="math inline">\(F\)</span>-ratio will increase as <span class="math inline">\(SS_M\)</span> increases relative to <span class="math inline">\(SS_R\)</span>.</p>
 <p>One caution: since each are divided by their respective degrees of freedom, one cannot compare <span class="math inline">\(SS_M\)</span> and <span class="math inline">\(SS_R\)</span> alone to know whether the <span class="math inline">\(F\)</span>-ratio will be large.</p>
@@ -2017,14 +2017,14 @@ shinyApp(ui = ui, server = server)</code></pre>
 <ul>
 <li><span style="color: blue;">At what point does the <span class="math inline">\(F\)</span>-ratio indicate a statistically significant difference (at <span class="math inline">\(\alpha=.05\)</span>) between the groups?</span></li>
 </ul>
-<details aria-label="Click here to see answer" id="details-17">
+<details id="details-17" aria-label="Click here to see answer">
 <summary>Click here to see answer</summary>
 <p>For this dataset, when the proportion of variability due to between-group differences is .2, the <span class="math inline">\(p\)</span> value is less than our critical <span class="math inline">\(\alpha\)</span> value of .05, indicating a statistically significant difference.</p>
 </details>
 <ul>
 <li><span style="color: blue;">Can the distributions for the two groups overlap when the <span class="math inline">\(F\)</span>-ratio indicates a statistically significant difference (at <span class="math inline">\(\alpha=.05\)</span>)?</span></li>
 </ul>
-<details aria-label="Click here to see answer" id="details-18">
+<details id="details-18" aria-label="Click here to see answer">
 <summary>Click here to see answer</summary>
 <p>Yes - although the group means will be different, the distributions of group scores can (and usually do) overlap to some extent.</p>
 </details>
@@ -2141,7 +2141,7 @@ shinyApp(ui = ui, server = server)</code></pre>
 <ul>
 <li><span style="color: blue;">Compute the grand mean, <span class="math inline">\(\bar{x}\)</span>, for each dataset</span></li>
 </ul>
-<details aria-label="Click here to see answer" id="details-19">
+<details id="details-19" aria-label="Click here to see answer">
 <summary>Click here to see answer</summary>
 <p>Here we omit notation indicating that there are two separate groups for each dataset.</p>
 <p>Dataset 1:</p>
@@ -2152,7 +2152,7 @@ shinyApp(ui = ui, server = server)</code></pre>
 <ul>
 <li><span style="color: blue;">Compute the group means, <span class="math inline">\(\bar{x}_1\)</span> and <span class="math inline">\(\bar{x}_2\)</span>, for each dataset</span></li>
 </ul>
-<details aria-label="Click here to see answer" id="details-20">
+<details id="details-20" aria-label="Click here to see answer">
 <summary>Click here to see answer</summary>
 <p>Dataset 1:</p>
 <p><span class="math display">\[\bar{x}_1 = \frac{\sum^{n_1}_{i=1}x_{i1}}{n_1} = \frac{3+7+3+7+3+7}{6} = 5\]</span></p>
@@ -2164,7 +2164,7 @@ shinyApp(ui = ui, server = server)</code></pre>
 <ul>
 <li><span style="color: blue;">Compute <span class="math inline">\(SS_T\)</span> for each dataset; are they in fact the same?</span></li>
 </ul>
-<details aria-label="Click here to see answer" id="details-21">
+<details id="details-21" aria-label="Click here to see answer">
 <summary>Click here to see answer</summary>
 <p>Dataset 1:</p>
 <p>Recall that, <span class="math inline">\(\bar{x} = 5\)</span>.</p>
@@ -2185,7 +2185,7 @@ SS_T = &amp; \sum^k_{g=1}\sum^{n_g}_{i=1}(x_{ig}-\bar{x})^2 = (3-5)^2 + (3-5)^2 
 <ul>
 <li><span style="color: blue;">Compute <span class="math inline">\(SS_M\)</span> for each dataset. Which dataset has the larger <span class="math inline">\(SS_B\)</span>?</span></li>
 </ul>
-<details aria-label="Click here to see answer" id="details-22">
+<details id="details-22" aria-label="Click here to see answer">
 <summary>Click here to see answer</summary>
 <p>Dataset 1:</p>
 <p><span class="math inline">\(\bar{x}_1 = 5\)</span> <span class="math inline">\(\bar{x}_2 = 5\)</span> <span class="math inline">\(n_g = 6\)</span>$ for each dataset.</p>
@@ -2198,7 +2198,7 @@ SS_T = &amp; \sum^k_{g=1}\sum^{n_g}_{i=1}(x_{ig}-\bar{x})^2 = (3-5)^2 + (3-5)^2 
 <ul>
 <li><span style="color: blue;">Compute <span class="math inline">\(SS_R\)</span> for each dataset. Which dataset has the larger <span class="math inline">\(SS_R\)</span>?</span></li>
 </ul>
-<details aria-label="Click here to see answer" id="details-23">
+<details id="details-23" aria-label="Click here to see answer">
 <summary>Click here to see answer</summary>
 <p>Dataset 1:</p>
 <p><span class="math inline">\(\bar{x}_1 = 5\)</span> <span class="math inline">\(\bar{x}_2 = 5\)</span></p>
@@ -2219,7 +2219,7 @@ SS_R = &amp; \sum^k_{g=1}\sum^{n_g}(x_{ig}-\bar{x}_g)^2 = (3-3)^2 + (3-3)^2 + (3
 <ul>
 <li><span style="color: blue;">Complete an ANOVA table for each dataset. Which dataset is more likely to reject <span class="math inline">\(H_0\)</span>?</span></li>
 </ul>
-<details aria-label="Click here to see answer" id="details-24">
+<details id="details-24" aria-label="Click here to see answer">
 <summary>Click here to see answer</summary>
 <p>These example datasets are so extreme, Dataset 1 has no between-group variability, and Dataset 2 has all of the variability between-groups to the point that the F ratio is not defined. If there were at least a tiny bit of within-group variability, dataset 2 would reject <span class="math inline">\(H_0\)</span>.</p>
 <p>Dataset 1:</p>
