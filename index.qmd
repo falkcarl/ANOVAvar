@@ -26,9 +26,9 @@ knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=FALSE)
 
 # Overview
 
-This interactive statistics module is intended to review concepts regarding the variability of a single quantitative variable. We consider its variability in the context of linear models such as ANOVA<!-- and linear regression-->.
+This interactive statistics module is intended to review concepts regarding the variability of a single quantitative variable. We consider its variability in the context of linear models such as ANOVA
 
-This module is intended as to be non-technical, with the intended audience being social science undergraduates. It is also intended to supplement instruction regarding such concepts<!--, not replace instruction-->.
+This module is intended as to be non-technical, with the intended audience being social science undergraduates. It is also intended to supplement instruction regarding such concepts.
 
 ## Learning outcomes
 
@@ -41,10 +41,6 @@ The module is divided into two sections. By the end of each section, it is expec
     - Understand how variance is partitioned in a one-way between subjects ANOVA.
     - Be able to articulate how changes in the different sources of variance may affect the omnibus F-test.
     - Apply knowledge of the sources of variances to inform the chances of rejecting the null hypothesis for the omnibus test.
-    
-<!--3. Linear regression
-    - Understand through visualizations that least-squares uniquely minimizes the sum of squared deviations.
-    - Understand how uncertainty in finite samples affects regression line estimates.-->
 
 # Part 1: Review of Variability and Variance
 
@@ -490,8 +486,6 @@ Dependent variable: The outcome variable of interest in ANOVA.
 :::
 
 Ideally, research subjects are randomly assigned to one of the groups (i.e., an experimental research design).
-<!--
-- Research subjects may be randomly sampled from the groups (correlational research design); or-->
 
 The research question typically concerns whether the groups differ on some quantitative outcome variable, sometimes called the **dependent variable**.
 
@@ -582,7 +576,7 @@ where $n_1$ is the sample size for group 1, and $x_{i1}$ is an individual observ
 
 :::
 
-Based on inspecting the means, it looks like there might be a difference in well-being scores. But, the number of research subjects is relatively small and people do tend to naturally vary in their well-being scores. How do we know whether the differences in sample means are just due to chance alone? Can we infer that the population means are different just by looking at these mean values from our sample?
+Based on inspecting the means, it looks like there might be a difference in well-being scores across groups. But, the number of research subjects is relatively small and people do tend to naturally vary in their well-being scores. How do we know whether the differences in sample means are just due to chance alone? Can we infer that the population means are different just by looking at these mean values from our sample?
 
 Not quite, but an ANOVA can help us answer these questions by partitioning variability due to different sources.
 
@@ -692,29 +686,39 @@ SS_T = & (4-5.2)^2 + (3-5.2)^2 + (5-5.2)^2 + (4-5.2)^2 + (5-5.2)^2 +\\
 In a one-way between-subjects ANOVA, total variability ($SS_T$) is partitioned into two parts:
 
 \begin{align*}
-SS_T = SS_B + SS_W
+SS_T = SS_M + SS_R
 \end{align*}
 
-- $SS_B$ is between-group variability or **sum of squares between**, sometimes denoted as the model sum of squares, or $SS_M$
-- $SS_W$ is within-group variability **sum of squares within**, sometimes denoted the residual sum of squares, or $SS_R$
+- $SS_M$ is between group variability or **sum of squares model**, sometimes denoted as the sum of squares between groups, or $SS_B$
+- $SS_R$ is within-group variability or **sum of squares residual**, sometimes denoted as the sum of squares within groups, or $SS_W$
 
 ::: {.column-margin}
-Sum of squares between: $SS_B$
+Sum of squares model: $SS_M$
 
-Sum of squares within: $SS_W$
+Sum of squares residual: $SS_R$
 :::
 
 These two sources of variance map onto reasons why the scores for the dependent variable may differ:
 
-- If scores differ because the groups have different means (e.g., due to the independent variable having an effect), this is captured by $SS_B$
-- If scores differ simply because research subjects naturally tend to be different from each other (even if they belong to the same group), this is captured by $SS_W$
+- If scores differ because the groups have different means (e.g., due to the independent variable having an effect), this is captured by $SS_M$
+- If scores differ simply because research subjects naturally tend to be different from each other (even if they belong to the same group), this is captured by $SS_R$
 
-### Sum of squares between
+:::{.callout-note collapse="true"}
+### Why use "Model" and "Residual" instead of "Between" and "Within"?
 
-To compute the variability of group means, we consider deviations between each group mean and the grand mean, $\bar{x}_g - \bar{x}$. Sum of squares between, $SS_B$, is computed in this way, except the deviations are squared and weighted by sample size:
+The terms "between" and "within" group variability are likely more intuitive if you have not been exposed to more general modeling frameworks, but are specific to ANOVA. Different authors and teachers will use different terminology depending on their preference. In this version of the module we are using these terms interchangeably with "model" and "residual," respectively, in anticipation of moving on to other modeling frameworks, such as multiple linear regression or the general linear model.
+
+For example, between group variability is the amount of total variability that is explained by the model. But, use of "between" group variability will make less sense to use as terminology if the predictor variables are quantitative (i.e., continuous, not categorical).
+
+What is the "model" for ANOVA? Briefly, a statistical model provides a way of representing the data and a simplified belief about how the data were generated in reality. The model for a one-way between-subjects ANOVA allows each group to have a different mean. Models also allow us to make predictions. The ANOVA model here states that we can do a better job of predicting each participant's score by using the mean of their group.
+:::
+
+### Sum of squares model (or sum of squares between)
+
+To compute the variability of group means, we consider deviations between each group mean and the grand mean, $\bar{x}_g - \bar{x}$. Sum of squares model, $SS_M$, is computed in this way, except the deviations are squared and weighted by sample size:
 
 \begin{align*}
-SS_B = \sum_{g=1}^k n_g(\bar{x}_g - \bar{x})^2
+SS_M = \sum_{g=1}^k n_g(\bar{x}_g - \bar{x})^2
 \end{align*}
 
 To visualize, consider that for this example there are three deviations for each of the three group means:
@@ -757,7 +761,7 @@ ggplot(dat, aes(x = factor(group), y = value, color = factor(group))) +
                linewidth = 1) +
   
   scale_color_brewer(palette = "Dark2", name = "Group") +
-  labs(y = "Well-being", x = "Group", title = "Sum of squares between (SSB)") +
+  labs(y = "Well-being", x = "Group", title = "Sum of squares model (SSM)") +
   theme_minimal(base_size = 15)
 ```
 
@@ -835,7 +839,7 @@ server <- function(input, output) {
                    linewidth = 1) +
       
       scale_color_brewer(palette = "Dark2", name = "Group") +
-      labs(y = "Well-being", x = "Group", title = "Sum of squares between (SSB)") +
+      labs(y = "Well-being", x = "Group", title = "Sum of squares model (SSM)") +
       theme_minimal(base_size = 15) + 
       ylim(1,10)
     
@@ -846,7 +850,7 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
-- [As $SS_B$ increases, what happens to deviations between the group means and the grand mean?]{style="color: blue;"}
+- [As $SS_M$ increases, what happens to deviations between the group means and the grand mean?]{style="color: blue;"}
     a. Deviations between the group means and the grand mean stay about the same.
     b. Deviations between the group means and the grand mean become smaller.
     c. Deviations between the group means and the grand mean become larger.
@@ -854,22 +858,22 @@ shinyApp(ui = ui, server = server)
 
 :::{.details summary = "Click here to see the answer"}
 
-(c) Deviations between the group means and the grand mean become larger. Note how when the slider is moved to the right, $SS_B$ is larger and so are the dotted lines between each group's mean and the grand mean.
+(c) Deviations between the group means and the grand mean become larger. Note how when the slider is moved to the right, $SS_M$ is larger and so are the dotted lines between each group's mean and the grand mean.
 
 :::
 
-### Sum of squares within
+### Sum of squares residual (or sum of squares within)
 
-To compute the variance within groups, we consider deviations between each observation and the mean of the group to which it belongs, $x_{ig} - \bar{x}_g$. Sum of squares within, $SS_W$, is computed in this way; deviations are squared and added up:
+To compute the variance within groups, we consider deviations between each observation and the mean of the group to which it belongs, $x_{ig} - \bar{x}_g$. Sum of squares residual, $SS_R$, is computed in this way; deviations are squared and added up:
 
 \begin{align*}
-SS_W = \sum_{g=1}^k \sum_{i=1}^{n_g} (x_{ig} - \bar{x}_g)^2
+SS_R = \sum_{g=1}^k \sum_{i=1}^{n_g} (x_{ig} - \bar{x}_g)^2
 \end{align*}
 
 Again, although there is double-summation and extra notation, this is no different than computing the sum of squares within each group and then adding them together:
 
 \begin{align*}
-SS_W = \sum_{g=1}^k SS_g
+SS_R = \sum_{g=1}^k SS_g
 \end{align*}
 
 To visualize, consider the deviations between each score and its group mean:
@@ -905,11 +909,11 @@ ggplot(dat, aes(x = factor(group), y = value, color = factor(group))) +
                linewidth = 0.8) +
   
   scale_color_brewer(palette = "Dark2", name = "Group") +
-  labs(y = "Well-being", x = "Group", title = "Sum of squares within (SSW)") +
+  labs(y = "Well-being", x = "Group", title = "Sum of squares residual (SSR)") +
   theme_minimal(base_size = 15)
 ```
 
-What happens to the scores if the within-group variability were to be increased or decreased? Try the slider for the following plot to find out.
+What happens to the scores if the residual (or within-group) variability were to be increased or decreased? Try the slider for the following plot to find out.
 
 ```{shinylive-r}
 #| standalone: true
@@ -996,7 +1000,7 @@ server <- function(input, output) {
                    linewidth = 0.8) +
       
       scale_color_brewer(palette = "Dark2", name = "Group") +
-      labs(y = "Well-being", x = "Group", title = "Sum of squares within (SSW)") +
+      labs(y = "Well-being", x = "Group", title = "Sum of squares residual (SSR)") +
       theme_minimal(base_size = 15) + 
       ylim(1, 10)
     
@@ -1008,7 +1012,7 @@ shinyApp(ui = ui, server = server)
 
 ```
 
-- [As $SS_W$ increases, what happens to deviations between the scores and their respective group means?]{style="color: blue;"}
+- [As $SS_R$ increases, what happens to deviations between the scores and their respective group means?]{style="color: blue;"}
     a. Deviations between the scores and the group means stay about the same.
     b. Deviations between the scores and the group means become smaller.
     c. Deviations between the scores and the group means become larger.
@@ -1016,21 +1020,21 @@ shinyApp(ui = ui, server = server)
 
 :::{.details summary = "Click here to see the answer"}
 
-(c) Deviations between the scores and the group means become larger. Note how when the slider is moved to the right, $SS_W$ is larger and so are the dotted lines between each score and their group's mean. But, the group means do not change.
+(c) Deviations between the scores and the group means become larger. Note how when the slider is moved to the right, $SS_R$ is larger and so are the dotted lines between each score and their group's mean. But, the group means do not change.
 
 :::
 
 ::: {.callout-note collapse="true"}
-## From a research methods perspective, what do you think affects $SS_B$?
+## From a research methods perspective, what do you think affects $SS_M$?
 
-Since $SS_B$ is computed by looking at variability *between* group means, it represents variability in the dependent variable that may be due to the experimental manipulation. If the experimental manipulation is not strong enough to induce large group differences, $SS_B$ may be smaller as a result. The strength of experimental manipulation is easier to think about if the independent variable were something like drug dosage. Three levels could be close together (e.g., 0 mg, 5 mg, 10 mg) or farther apart (0 mg, 10 mg, 20 mg). In our example, the researcher may see larger (or smaller) effects of the study break type by: changing the frequency of breaks, increasing the amount of time for each break, or studying the effect over a longer period of time.
+Since $SS_M$ is computed by looking at variability *between* group means, it represents variability in the dependent variable that may be due to the experimental manipulation. If the experimental manipulation is not strong enough to induce large group differences, $SS_M$ may be smaller as a result. The strength of experimental manipulation is easier to think about if the independent variable were something like drug dosage. Three levels could be close together (e.g., 0 mg, 5 mg, 10 mg) or farther apart (0 mg, 10 mg, 20 mg). In our example, the researcher may see larger (or smaller) effects of the study break type by: changing the frequency of breaks, increasing the amount of time for each break, or studying the effect over a longer period of time.
 
 :::
 
 ::: {.callout-note collapse="true"}
-## From a research methods perspective, what do you think affects $SS_W$?
+## From a research methods perspective, what do you think affects $SS_R$?
 
-Since $SS_W$ is computed by looking at variability *within* each group, it represents natural variability in how the research subjects tend to differ from one another. But, it can also be inflated by sources of noise that are unwanted. For example, if *all* research subjects go through a standardized procedure for an experiment, this may reduce $SS_W$. If instead multiple research assistants are responsible for guiding research subjects through an experiment and there is no set script or instructions, this may increase $SS_W$.
+Since $SS_R$ is computed by looking at variability *within* each group, it represents natural variability in how the research subjects tend to differ from one another. But, it can also be inflated by sources of noise that are unwanted. For example, if *all* research subjects go through a standardized procedure for an experiment, this may reduce $SS_R$. If instead multiple research assistants are responsible for guiding research subjects through an experiment and there is no set script or instructions, this may increase $SS_R$.
 
 :::
 
@@ -1041,8 +1045,8 @@ The between- and within-group variability form the first components of a basic o
 
 | Source  | SS  | df  | MS  | F   | p   |
 |---------|-----|-----|-----|-----|-----|
-| Between | $SS_B$ | $df_B$  | $MS_B$  | $F$-ratio | $p$-value |
-| Within  | $SS_W$| $df_W$  | $MS_W$  |     |     |
+| Model (Between) | $SS_M$ | $df_M$  | $MS_M$  | $F$-ratio | $p$-value |
+| Residual (Within)  | $SS_R$| $df_R$  | $MS_R$  |     |     |
 | Total   | $SS_T$| $df_T$  |     |     |     |
 
 : Basic one-way ANOVA table showing quantities to be filled in
@@ -1050,21 +1054,21 @@ The between- and within-group variability form the first components of a basic o
 In what follows, we will complete this table in order to have a principled way of comparing between- and within-group variability, and ultimately testing the null hypothesis, $H_0: \mu_1 = \mu_2 =  \mu_3$, to answer the research question regarding whether the type of study break has an effect on well-being.
 
 
-In the three-group example considered at the start of this section, $SS_B = 12.4$ and $SS_W = 12.0$.
+In the three-group example considered at the start of this section, $SS_M = 12.4$ and $SS_R = 12.0$.
 
-Recall that sum of squares here are additive: $SS_T = SS_B + SS_W = 12.4 + 12.0 = 24.4$.
+Recall that sum of squares here are additive: $SS_T = SS_M + SS_R = 12.4 + 12.0 = 24.4$.
 
 We can fill in these elements on the Table:
 
 | Source  | SS  | df  | MS  | F   | p   |
 |---------|-----|-----|-----|-----|-----|
-| Between | 12.4| \-  | \-  | \-  | \-  |
-| Within  | 12.0| \-  | \-  |     |     |
+| Model (Between) | 12.4| \-  | \-  | \-  | \-  |
+| Residual (Within)  | 12.0| \-  | \-  |     |     |
 | Total   | 24.4| \-  |     |     |     |
 
 : The beginning of the one-way ANOVA table
 
-- [Can you show how $SS_W$ and $SS_B$ are computed for this dataset?]{style="color: blue;"}
+- [Can you show how $SS_R$ and $SS_M$ are computed for this dataset?]{style="color: blue;"}
 
 :::{.details summary = "Click here to see answer"}
 
@@ -1079,12 +1083,12 @@ $\bar{x} = 5.2$
 $n_g = 5$
 
 \begin{align*}
-SS_B = & \sum^k_{g=1}n_g(\bar{x}_{g}-\bar{x})^2\\
+SS_M = & \sum^k_{g=1}n_g(\bar{x}_{g}-\bar{x})^2\\
  = & 5(4.2-5.2)^2 + 5(5-5.2)^2 + 5(6.4-5.2)^2 = 12.4
 \end{align*}
 
 \begin{align*}
-SS_W = & \sum^k_{g=1}\sum^{n_g}(x_{ig}-\bar{x}_g)^2 = \\
+SS_R = & \sum^k_{g=1}\sum^{n_g}(x_{ig}-\bar{x}_g)^2 = \\
 = & (4-4.2)^2 + (3-4.2)^2 + (5-4.2)^2 + (4-4.2)^2 + (5-4.2)^2 +\\
 & (4-5)^2 + (5-5)^2 + (6-5)^2 + (4-5)^2 + (6-5)^2 + \\
 & (8-6.4)^2 + (7-6.4)^2 + (6-6.4)^2 + (5-6.4)^2 + (6-6.4)^2\\
@@ -1095,7 +1099,7 @@ SS_W = & \sum^k_{g=1}\sum^{n_g}(x_{ig}-\bar{x}_g)^2 = \\
 
 ### Degrees of freedom and mean squares
 
-$SS_B$ and $SS_W$, as measures of between-group and within-group variability, have the same issue as the sum of squares: the values of each will simply increase as the number of groups or sample size increases. We instead convert each into variance estimates.
+$SS_M$ and $SS_R$, as measures of between-group and within-group variability, have the same issue as the sum of squares: the values of each will simply increase as the number of groups or sample size increases. We instead convert each into variance estimates.
 
 Variance estimates often have the form:
 
@@ -1110,78 +1114,78 @@ In general,
 **Between-group degrees of freedom**
 
 \begin{align*}
-df_B = k-1
+df_M = k-1
 \end{align*}
 
 **Within-group degrees of freedom**
 
 \begin{align*}
-df_W = n-k
+df_R = n-k
 \end{align*}
 Recall that $n$ is the total sample size and $k$ is the number of groups.
 
 ::: {.column-margin}
-Between-group degrees of freedom: $df_B$
+Between-group degrees of freedom: $df_M$
 
-Within-group degrees of freedom: $df_W$
-:::
+Within-group degrees of freedom: $df_R$
+::
 
 For this example,
 
-- $df_B = 3-1 = 2$
-- $df_W = 15-3 = 12$
+- $df_M = 3-1 = 2$
+- $df_R = 15-3 = 12$
 
 which we can fill in on the following table:
 
 | Source  | SS  | df  | MS  | F   | p   |
 |---------|-----|-----|-----|-----|-----|
-| Between | 12.4  | 2   | \-  | \-  | \-  |
-| Within  | 12.0  | 12  | \-  |     |     |
+| Model (Between) | 12.4  | 2   | \-  | \-  | \-  |
+| Residual (Within)  | 12.0  | 12  | \-  |     |     |
 | Total   | 24.4 | 14  |     |     |     |
 
 Note also that $df_T$, or degrees of freedom for the total, is the same that we would obtain if we were to compute the variance of all of the scores, ignoring groups, $n-1$, which in this case is $15 -1 = 14$.
 
-Note also that $df$ are additive: $df_T = df_B + df_W$.
+Note also that $df$ are additive: $df_T = df_M + df_R$.
 
-- [Hypothetically, if there were 4 groups and 20 subjects in each group, what would be the values of $df_B$ and $df_W$?]{style="color: blue;"}
+- [Hypothetically, if there were 4 groups and 20 subjects in each group, what would be the values of $df_M$ and $df_R$?]{style="color: blue;"}
 
 :::{.details summary = "Click here to see answer"}
 Number of groups ($k$) = $4$
 Number of subjects ($n$) = $4 \times 20 = 80$
 
-$$df_B = k-1 = 4 - 1 = 3$$
-$$df_W = n-k = 80 - 4 = 76$$
+$$df_M = k-1 = 4 - 1 = 3$$
+$$df_R = n-k = 80 - 4 = 76$$
 :::
 
-Next, we analogously divide between- and within-group variability by their corresponding degrees of freedom. The result are two variance estimates called **mean squares between ($MS_B$)** and **mean squares within ($MS_W$)**.
+Next, we analogously divide between- and within-group variability by their corresponding degrees of freedom. The result are two variance estimates called **mean squares model ($MS_M$)** and **mean squares residual ($MS_R$)**.
 
 \begin{align*}
-MS_B = \frac{SS_B}{df_B}
+MS_M = \frac{SS_M}{df_M}
 \end{align*}
 
 \begin{align*}
-MS_W = \frac{SS_W}{df_W}
+MS_R = \frac{SS_R}{df_R}
 \end{align*}
 
 ::: {.column-margin}
-Mean squares between: $MS_B$
+Mean squares model: $MS_M$
 
-Mean squares within: $MS_W$
+Mean squares residual: $MS_R$
 :::
 
 | Source  | SS  | df  | MS  | F   | p   |
 |---------|-----|-----|-----|-----|-----|
-| Between | 12.4  | 2   | 6.2  | \-  | \-  |
-| Within  | 12.0  | 12  | 1.0  |     |     |
+| Model (Between) | 12.4  | 2   | 6.2  | \-  | \-  |
+| Residual (Within)  | 12.0  | 12  | 1.0  |     |     |
 | Total   | 24.4 | 14  |     |     |     |
 
-- [Can you show the computations for $MS_B$ and $MS_W$?]{style="color: blue;"}
+- [Can you show the computations for $MS_M$ and $MS_R$?]{style="color: blue;"}
 
 :::{.details summary="Click here to see answer"}
 
-$$MS_B = \frac{SS_B}{df_B} = \frac{12.4}{2} = 6.2$$
+$$MS_M = \frac{SS_M}{df_M} = \frac{12.4}{2} = 6.2$$
 
-$$MS_W =\frac{SS_W}{df_W} = \frac{12}{1} = 12$$
+$$MS_R =\frac{SS_R}{df_R} = \frac{12}{1} = 12$$
 
 :::
 
@@ -1189,14 +1193,14 @@ $$MS_W =\frac{SS_W}{df_W} = \frac{12}{1} = 12$$
 
 Finally, we can compare these two variance estimates.
 
-The **F-Ratio** is the ratio of $MS_B$ to $MS_W$:
+The **F-Ratio** is the ratio of $MS_M$ to $MS_R$:
 
 \begin{align*}
-F = \frac{MS_{B}}{MS_{W}}
+F = \frac{MS_{M}}{MS_{R}}
 \end{align*}
 
 ::: {.column-margin}
-$F$-ratio: $F = \frac{MS_B}{MS_W}$. Also called an $F$-statistic. The ratio of $MS_B$ to $MS_W$.
+$F$-ratio: $F = \frac{MS_M}{MS_R}$. Also called an $F$-statistic. The ratio of $MS_M$ to $MS_R$.
 
 :::
 
@@ -1206,8 +1210,8 @@ For this example,
 
 | Source  | SS  | df  | MS  | F   | p   |
 |---------|-----|-----|-----|-----|-----|
-| Between | 12.4  | 2   | 6.2  | 6.2  | \-  |
-| Within  | 12.0  | 12  | 1.0  |     |     |
+| Model (Between) | 12.4  | 2   | 6.2  | 6.2  | \-  |
+| Residual (Within)  | 12.0  | 12  | 1.0  |     |     |
 | Total   | 24.4 | 14  |     |     |     |
 
 The $F$-ratio, or $F$-statistic, can now be used for hypothesis-testing, just like a $z$ or $t$-statistic that you may have already learned about in other contexts.
@@ -1216,8 +1220,8 @@ There are both conceptual ways to think about the $F$-ratio as well as a slightl
 
 First, consider the conceptual explanation:
 
-- If the null hypothesis were true, $H_0: \mu_1 = \mu_2 = \mu_3$, both $MS_W$ and $MS_B$ would be estimates of the same variance
-- If the null hypothesis is false and $MS_B$ tells us about between-group variability, we might expect it to be large relative to $MS_W$
+- If the null hypothesis were true, $H_0: \mu_1 = \mu_2 = \mu_3$, both $MS_M$ and $MS_R$ would be estimates of the same variance
+- If the null hypothesis is false and $MS_M$ tells us about between-group variability, we might expect it to be large relative to $MS_R$
 - Therefore, large $F$ ratios may be indicative of the null hypothesis being false
 
 While this conceptual explanation often works---it is true that larger $F$-ratios are more indicative of rejection of $H_0$---be careful not to fall for the myth that the $F$-ratio must be greater than 1 in order to reject $H_0$.
@@ -1225,13 +1229,13 @@ While this conceptual explanation often works---it is true that larger $F$-ratio
 :::{.callout-warning collapse="true"}
 ### The F > 1 myth
 
-Popular textbooks in the social sciences sometimes give the impression that $F>1$ is required in order to reject $H_0$. To the lay person the logic sounds attractive: If $MS_B$ and $MS_W$ both estimate the same variance under $H_0$, and if $MS_B$ will be larger under the alternative, then the requirement that $F>1$ makes intuitive sense; a ratio of 1 would seem as though $H_0$ holds true. But at this point, the reader needs to understand that this rule is not true, and it is technically possible to reject $H_0$ even if $F < 1$. It is just that the degrees of freedom and $\alpha$ combinations required to see this are rarely used in practice. The explanation may require too much of a technical tangent at this point and is not necessary for the learning outcomes of this module.
+Popular textbooks in the social sciences sometimes give the impression that $F>1$ is required in order to reject $H_0$. To the lay person the logic sounds attractive: If $MS_M$ and $MS_R$ both estimate the same variance under $H_0$, and if $MS_M$ will be larger under the alternative, then the requirement that $F>1$ makes intuitive sense; a ratio of 1 would seem as though $H_0$ holds true. But at this point, the reader needs to understand that this rule is not true, and it is technically possible to reject $H_0$ even if $F < 1$. It is just that the degrees of freedom and $\alpha$ combinations required to see this are rarely used in practice. The explanation may require too much of a technical tangent at this point and is not necessary for the learning outcomes of this module.
 
 :::
 
 ### Hypothesis testing with F-ratios
 
-If the null hypothesis is true, $F$-ratios follow a distribution, the **F-distribution**, which is a function of the within- and between-group degrees of freedom.
+If the null hypothesis is true, $F$-ratios follow a distribution, the **F-distribution**, which is a function of the model and residual degrees of freedom.
 
 ::: {.column-margin}
 $F$-distribution: Reference distribution used for testing the overall null hypothesis of ANOVA. Requires two degrees of freedom.
@@ -1253,7 +1257,7 @@ This resulting distribution of $F$-ratios can be thought of as a sampling distri
 
 The F distribution is actually a family of distributions, whose shape varies according to our degrees of freedom.
 
-Try adjusting the between- and within- degrees of freedom to change the shape of the F distribution.
+Try adjusting the two degrees of freedom to change the shape of the F distribution.
 
 ```{shinylive-r}
 #| standalone: true
@@ -1270,8 +1274,8 @@ library(ggplot2)
 
 ui <- fluidPage(
   plotOutput(outputId = "fdistributionPlot"),
-  sliderInput("df1", "Between-subjects df:",min=1,max=20,value=1,step=1),
-  sliderInput("df2", "Within-subjects df:",min=1,max=50,value=10,step=1)
+  sliderInput("df1", "Model df:",min=1,max=20,value=1,step=1),
+  sliderInput("df2", "Residual df:",min=1,max=50,value=10,step=1)
 )
 
 server <- function(input, output) {
@@ -1313,14 +1317,14 @@ shinyApp(ui = ui, server = server)
 
 We can use the F distribution for significance testing, following logic that large $F$-ratios would be surprising to obtain if $H_0$ were true:
 
-- Set an α value which corresponds to a percentage in the tail of the distribution. (i.e., if the null hypothesis is true, $\alpha$ is the probability of a Type I error). For example, $\alpha=.05$
+- Set an $\alpha$ value which corresponds to a percentage in the tail of the distribution. (i.e., if the null hypothesis is true, $\alpha$ is the probability of a Type I error). For example, $\alpha=.05$ for 5% in the right-hand tail.
 - If our $p$-value is less than $\alpha$ *or* the obtained $F$-ratio exceed a critical value determined by $\alpha$, we reject the null hypothesis.
 
-Rejecting the null hypothesis would mean that <!--group explains a significant amount of variability in our data, or, in other words, that--> at least one group mean is significantly different from another in a statistical sense. That is, we infer there is some difference among the group means in the population.
+Rejecting the null hypothesis would mean that at least one group mean is significantly different from another in a statistical sense. That is, we infer there is some difference among the group means in the population.
 
 In the following plot, the F distribution has:
 
-- $df_B = 2$ and $df_W = 12$
+- $df_M = 2$ and $df_R = 12$
 - The critical region corresponding to $\alpha=.05$ highlighted
 - The critical value for $F$ corresponding to this region is about 3.89
 
@@ -1356,8 +1360,8 @@ If our software program or an online calculator provides us with the proportion 
 
 | Source  | SS  | df  | MS  | F   | p   |
 |---------|-----|-----|-----|-----|-----|
-| Between | 12.4  | 2   | 6.2  | 6.2  | 0.014  |
-| Within  | 12.0  | 12  | 1.0  |     |     |
+| Model (Between) | 12.4  | 2   | 6.2  | 6.2  | 0.014  |
+| Residual (Within)  | 12.0  | 12  | 1.0  |     |     |
 | Total   | 24.4 | 14  |     |     |     |
 
 In either case, examining the obtained $F$-ratio and comparing it to the critical value, or examining the $p$-value gives the same conclusion:
@@ -1368,11 +1372,11 @@ In either case, examining the obtained $F$-ratio and comparing it to the critica
 
 We conclude that there is some difference among the three group means in the population. Perhaps the type of study break has an effect on well-being. To shed more light on this issue may require post-hoc tests, which are not covered in this module.
 
-## Manipulation of both $SS_W$ and $SS_B$
+## Manipulation of both $SS_M$ and $SS_R$
 
 For illustrative purposes, we consider the case where ANOVA is applied to just two groups.
 
-Suppose $SS_T$ is fixed to a certain value. Try adjusting the relative proportion of between- and within- group variability. How does the F-ratio change as a result?
+Suppose $SS_T$ is fixed to a certain value. Try adjusting the relative proportion of model (between-group) and residual (within-group) variability. How does the F-ratio change as a result?
 
 ```{shinylive-r}
 #| standalone: true
@@ -1495,7 +1499,7 @@ server <- function(input, output) {
     dat <- datnew()
     
     df <- data.frame(
-      Source = c("Between", "Within", "Total"),
+      Source = c("Model", "Residual", "Total"),
       SS     = c(dat$SSB, dat$SSW, 125),
       df     = c(1L, 18L, 19L),
       MS     = c(dat$MSB, dat$MSW, ""),
@@ -1510,23 +1514,12 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
-<!--
-::: {.column width="100%"}
-| Source  | SS                      | df  | MS        | F       | p   |
-|---------|-------------------------|-----|-----------|---------|-----|
-| Between | {r} textOutput("SSB") | 1   | {r} textOutput("MSB") | {r} textOutput("Fratio") |  {r} textOutput("pval")   |
-| Within  | {r} textOutput("SSW") | 18  | {r} textOutput("MSW") |         |     |
-| Total   | 125                     | 19  |           |         |     |
-:::
-:::::
--->
-
-- [Is the $F$-ratio larger when $SS_B$ is large or when $SS_W$ is large?]{style="color: blue;"}
+- [Is the $F$-ratio larger when $SS_M$ is large or when $SS_R$ is large?]{style="color: blue;"}
 
 :::{.details summary = "Click here to see answer"}
-Assuming the degrees of freedom are constant, the $F$-ratio will increase as $SS_B$ increases relative to $SS_W$.
+Assuming the degrees of freedom are constant, the $F$-ratio will increase as $SS_M$ increases relative to $SS_R$.
 
-One caution: since each are divided by their respective degrees of freedom, one cannot compare $SS_B$ and $SS_W$ alone to know whether the $F$-ratio will be large.
+One caution: since each are divided by their respective degrees of freedom, one cannot compare $SS_M$ and $SS_R$ alone to know whether the $F$-ratio will be large.
 :::
 
 - [At what point does the $F$-ratio indicate a statistically significant difference (at $\alpha=.05$) between the groups?]{style="color: blue;"}
@@ -1698,7 +1691,7 @@ SS_T = & \sum^k_{g=1}\sum^{n_g}_{i=1}(x_{ig}-\bar{x})^2 = (3-5)^2 + (3-5)^2 + (3
 We can see that $SS_T$ is the same for both datasets.
 :::
 
-- [Compute $SS_B$ for each dataset. Which dataset has the larger $SS_B$?]{style="color: blue;"}
+- [Compute $SS_M$ for each dataset. Which dataset has the larger $SS_B$?]{style="color: blue;"}
 
 :::{.details summary = "Click here to see answer"}
 Dataset 1:
@@ -1707,7 +1700,7 @@ $\bar{x}_1 = 5$
 $\bar{x}_2 = 5$
 $n_g = 6$$ for each dataset.
 
-$$SS_B = \sum^k_{g=1}n_g(\bar{x}_{g}-\bar{x})^2 = 6*(5-5)^2 + 6*(5-5)^2 = 0$$
+$$SS_M = \sum^k_{g=1}n_g(\bar{x}_{g}-\bar{x})^2 = 6*(5-5)^2 + 6*(5-5)^2 = 0$$
 
 Dataset 2:
 
@@ -1715,12 +1708,12 @@ $\bar{x}_1 = 3 $
 $\bar{x}_2 = 7 $
 $n_g = 6$ for each dataset.
 
-$$SS_B = \sum^k_{g=1}n_g(\bar{x}_{g}-\bar{x})^2 = 6*(3-5)^2 + 6*(7-5)^2 = 48$$
+$$SS_M = \sum^k_{g=1}n_g(\bar{x}_{g}-\bar{x})^2 = 6*(3-5)^2 + 6*(7-5)^2 = 48$$
 
-Dataset 2 has the larger $SS_B$.
+Dataset 2 has the larger $SS_M$.
 :::
 
-- [Compute $SS_W$ for each dataset. Which dataset has the larger $SS_W$?]{style="color: blue;"}
+- [Compute $SS_R$ for each dataset. Which dataset has the larger $SS_R$?]{style="color: blue;"}
 
 :::{.details summary = "Click here to see answer"}
 Dataset 1:
@@ -1729,7 +1722,7 @@ $\bar{x}_1 = 5$
 $\bar{x}_2 = 5$
 
 \begin{align*}
-SS_W = & \sum^k_{g=1}\sum^{n_g}(x_{ig}-\bar{x}_g)^2 = (3-5)^2 + (7-5)^2 + (3-5)^2 + (7-5)^2 + (3-5)^2 + (7-5)^2\\
+SS_R = & \sum^k_{g=1}\sum^{n_g}(x_{ig}-\bar{x}_g)^2 = (3-5)^2 + (7-5)^2 + (3-5)^2 + (7-5)^2 + (3-5)^2 + (7-5)^2\\
 & + (7-5)^2 + (3-5)^2 + (7-5)^2 + (3-5)^2 + (7-5)^2 + (3-5)^2\\
 = & 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = 48
 \end{align*}
@@ -1740,12 +1733,12 @@ $\bar{x}_1 = 3$
 $\bar{x}_2 = 7$
 
 \begin{align*}
-SS_W = & \sum^k_{g=1}\sum^{n_g}(x_{ig}-\bar{x}_g)^2 = (3-3)^2 + (3-3)^2 + (3-3)^2 + (3-3)^2 + (3-3)^2 + (3-3)^2\\
+SS_R = & \sum^k_{g=1}\sum^{n_g}(x_{ig}-\bar{x}_g)^2 = (3-3)^2 + (3-3)^2 + (3-3)^2 + (3-3)^2 + (3-3)^2 + (3-3)^2\\
 & + (7-7)^2 + (7-7)^2 + (7-7)^2 + (7-7)^2 + (7-7)^2 + (7-7)^2\\
 = & 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 = 48
 \end{align*}
 
-Dataset 1 has the larger $SS_W$.
+Dataset 1 has the larger $SS_R$.
 
 :::
 
@@ -1759,8 +1752,8 @@ Dataset 1:
 
 | Source  | SS  | df  | MS  | F   |
 |---------|-----|-----|-----|-----|
-| Between | 0   | 1   | 0   | 0  |
-| Within  | 48  | 10  | 48 |     |
+| Model (Between) | 0   | 1   | 0   | 0  |
+| Residual (Within)  | 48  | 10  | 48 |     |
 | Total   | 48  | 11  |     |     |
 
 
@@ -1768,7 +1761,7 @@ Dataset 2:
 
 | Source  | SS  | df  | MS  | F   |
 |---------|-----|-----|-----|-----|
-| Between | 48   | 1   | 48   | undefined (48/0)  |
-| Within  | 0  | 10  | 0 |  0   |
+| Model (Between) | 48   | 1   | 48   | undefined (48/0)  |
+| Residual (Within)  | 0  | 10  | 0 |  0   |
 | Total   | 48  | 11  |     |     |
 :::
