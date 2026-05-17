@@ -1,6 +1,7 @@
 ---
 title: "Variability in ANOVA"
 author: "Jeremy Rappel, Mira Saad, Carl F. Falk, Jens Kreitewolf"
+date: "2026-05-17"
 format:
   html:
     toc: true
@@ -22,6 +23,28 @@ engine: knitr
 ```{r setup}
 #| echo: false
 knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=FALSE)
+
+######################################################################
+## Interactive Statistics Project - Module 4: Variability in ANOVA
+##
+## We thank the Association for Psychological Science for a small
+## teaching grant to help in the development of this software.
+##
+## Copyright 2025-2026 Jeremy Rappel, Carl F. Falk, Mira Saad &
+##  Jens Kreitewolf
+##
+## This program is free software: you can redistribute it and/or
+## modify it under the terms of the GNU Affero General Public License as
+## published by the Free Software Foundation, either version 3 of
+## the License, or (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU Affero General Public License for more details.
+## <http://www.gnu.org/licenses/>
+##
+
 ```
 
 # Overview
@@ -315,27 +338,6 @@ The sum of squared deviations is usually not the preferred choice for quantifyin
 ```{shinylive-r}
 #| standalone: true
 #| viewerHeight: 500
-
-######################################################################
-## Interactive Statistics Project - Module 4: Variability in ANOVA
-##
-## We thank the Association for Psychological Science for a small
-## teaching grant to help in the development of this software.
-##
-## Copyright 2025-2026 Jeremy Rappel, Carl F. Falk, Mira Saad &
-##  Jens Kreitewolf
-##
-## This program is free software: you can redistribute it and/or
-## modify it under the terms of the GNU Affero General Public License as
-## published by the Free Software Foundation, either version 3 of
-## the License, or (at your option) any later version.
-##
-## This program is distributed in the hope that it will be useful,
-## but WITHOUT ANY WARRANTY; without even the implied warranty of
-## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-## GNU Affero General Public License for more details.
-## <http://www.gnu.org/licenses/>
-##
 
 library(tibble) # CFF: this one also apparently required for shinylive to work
 library(dplyr)
@@ -1691,7 +1693,7 @@ SS_T = & \sum^k_{g=1}\sum^{n_g}_{i=1}(x_{ig}-\bar{x})^2 = (3-5)^2 + (3-5)^2 + (3
 We can see that $SS_T$ is the same for both datasets.
 :::
 
-- [Compute $SS_M$ for each dataset. Which dataset has the larger $SS_B$?]{style="color: blue;"}
+- [Compute $SS_M$ for each dataset. Which dataset has the larger $SS_M$?]{style="color: blue;"}
 
 :::{.details summary = "Click here to see answer"}
 Dataset 1:
