@@ -8,6 +8,7 @@ format:
     toc-expand: 1
     toc-depth: 2
     toc-location: left
+    page-layout: full    
 filters:
   - details
   - shinylive
@@ -1767,3 +1768,8 @@ Dataset 2:
 | Residual (Within)  | 0  | 10  | 0 |  0   |
 | Total   | 48  | 11  |     |     |
 :::
+
+
+# Credits
+
+We acknowledge the support from the Small Grants for Teaching Projects from the Association for Psychological Science (APS Fund for Teaching and Public Understanding of Psychological Science)

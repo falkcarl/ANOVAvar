@@ -1,11 +1,11 @@
 project:
   type: website
   output-dir: docs
-#  resources:
-# - shinylive-sw.js
+  # resources:
+  #   - shinylive-sw.js
   
 website:  
   repo-url: https://github.com/falkcarl/ANOVAvar
-  repo-actions: [edit, issue]
+  repo-actions: [issue]
   title: "ANOVA variability"
 
